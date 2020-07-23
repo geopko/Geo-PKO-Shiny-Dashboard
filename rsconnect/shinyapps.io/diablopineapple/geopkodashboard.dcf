@@ -1,0 +1,10 @@
+name: geopkodashboard
+title:
+username:
+account: diablopineapple
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2605081
+bundleId: 3426119
+url: https://diablopineapple.shinyapps.io/geopkodashboard/
+when: 1595512905.34889
