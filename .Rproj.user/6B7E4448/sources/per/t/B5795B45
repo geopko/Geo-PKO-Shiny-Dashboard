@@ -1,0 +1,22 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1598960971127.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1828501920",
+    "id" : "B5795B45",
+    "lastKnownWriteTime" : 1598965710,
+    "last_content_update" : 1598965710425,
+    "path" : "~/R/Geo-PKO-Shiny-v2.0/app.R",
+    "project_path" : "app.R",
+    "properties" : {
+        "cursorPosition" : "91,46",
+        "scrollLine" : "72"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
