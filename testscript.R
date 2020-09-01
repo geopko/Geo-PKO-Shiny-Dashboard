@@ -97,7 +97,7 @@ map <- gadm_sf_loadCountries(paste0("c\\(",examplelist,"\\)", sep=","), level=1,
 
 example2 <- "MRT"
 
-map <- gadm_sf_loadCountries(c("CAF", "TCD"), level=1, basefile="./")
+map <- gadm_sf_loadCountries("CIV", level=1, basefile="./")
 
 example4 <- c("RWA", "UGA", "CAF")
 
@@ -160,3 +160,20 @@ geopko_year <- geopko %>% group_by(Mission, year, location) %>%
     scale_color_viridis_c(name="Size of deployment")+
     guides(colour = guide_legend())
   
+  
+####facet plots####
+#creating year df
+
+  facetdf <- geopko %>% select(-starts_with("name.of.TCC"), -starts_with("No.troops.per.TCC"))
+facetdf2 <- facetdf %>% group_by(Mission, year, location) %>% mutate(facet_ave=round(mean(No.troops)))  %>% 
+  group_by(Mission, year, location) %>%
+  arrange(month) %>%
+  slice(1)
+
+testfacet <- facetdf2 %>% filter(Mission=="UNOCI")
+
+p2 <- ggplot() + geom_sf(data=map$sf) + 
+  geom_point(data=testfacet, aes(x=longitude, y=latitude)) +
+  facet_wrap(~ year) +
+  theme_void()
+p2

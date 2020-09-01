@@ -25,29 +25,40 @@ if(!require(DT)) install.packages("shinythemes", repos = "http://cran.us.r-proje
 if(!require(GADMTools)) install.packages("GADMTools")
 if(!require(Cairo)) install.packages("Cairo")
 if(!require(ggrepel)) install.packages("ggrepel")
+if(!require(foreign)) install.packages("foreign", repos = "https://svn.r-project.org/")
+
 options(shiny.usecairo=TRUE)
 # import data
 
-geopko <- read_csv("geopko.csv", col_types = cols(No.TCC = col_number(), 
-                                                  No.troops = col_number(),
-                                                  month = col_number()))
-iso <- read.csv("geopko_ccode.csv")
+geopko <- read_csv("geopko2.csv", col_types = cols(.default="c"))
+iso <- read.csv("geopko_ccode2.csv")
 
 
 # data prep TCC
-tcc_df <- geopko %>% select(Source, Mission, year, month, No.troops, 16:44) %>% 
-  group_by(Source, Mission, year, month) %>% mutate(Total.troops=sum(No.troops)) %>% ungroup() %>%
-  select(1:4, 35, 5:34, -No.troops)
 
-colnames(tcc_df) <- sub("name.of.TCC", "nameofTCC_", colnames(tcc_df))
-colnames(tcc_df) <- sub("No.troops.per.TCC", "notroopsperTCC_", colnames(tcc_df))
-tcc_df <- tcc_df %>% mutate_at(vars(starts_with("notroopsperTCC")), as.character)
-tcc_df <- tcc_df %>% mutate_at(vars(starts_with("nameofTCC")), as.character)
+geopko <- geopko %>% 
+  mutate(No.troops=as.numeric(No.troops),
+         No.TCC=as.numeric(No.TCC),
+         Longitude=as.numeric(Longitude),
+         Latitude=as.numeric(Latitude),
+         UNMO.dummy=as.numeric(UNMO.dummy),
+         UNPOL.dummy=as.numeric(UNPOL.dummy),
+         HQ=as.factor(HQ)) 
+
+tcc_df <- geopko %>% select(Source, Mission, Year, Month, No.troops, 52:85) %>% 
+  group_by(Source, Mission, Year, Month) %>% 
+  mutate(Total.troops=sum(No.troops, na.rm=T)) %>% ungroup()
+
+
+#colnames(tcc_df) <- sub("name.of.TCC", "nameofTCC_", colnames(tcc_df)) obsolete script
+#colnames(tcc_df) <- sub("No.troops.per.TCC", "notroopsperTCC_", colnames(tcc_df))
+#tcc_df <- tcc_df %>% mutate_at(vars(starts_with("notroopsperTCC")), as.character) %>% 
+#  mutate_at(vars(starts_with("nameofTCC")), as.character) %>% 
 
 #data prep: creating list of country codes for GADM sf files dowload
 
-cclist3 <- iso %>% select(Mission, alpha_3) %>% distinct() 
-map_df <- geopko %>% unite(timepoint, c("year","month"), sep="-") %>% 
+cclist3 <- iso %>% select(Mission, a3) %>% distinct() 
+map_df <- geopko %>% unite(timepoint, c("Year","Month"), sep="-") %>% 
   mutate(timepoint=as.factor(timepoint))
 
 #data prep for single-map generator
@@ -68,74 +79,82 @@ ui <- fluidPage(
                           checkboxInput(inputId="depsize_map", "Deployment size", value=TRUE),
                           checkboxInput(inputId="MHQ_map", "Mission HQ", value=FALSE),
                           checkboxInput(inputId="SHQ_map", "Sector HQ", value=FALSE),
-                          checkboxInput(inputId="MO_map", "UNMO", value=FALSE)
+                          checkboxInput(inputId="MO_map", "UNMO", value=FALSE),
+                          checkboxInput(inputId="UNPOL_map", "UNPOL", value=FALSE),
+                          helpText("Errors may occur when a selected feature is not available for a map. Please deselect the option.")
                         ),
                         mainPanel(fluid=TRUE,
-                                  plotOutput("depmap"))
-                        
-                      )
-             ),
-             tabPanel("Troop-contributing Countries",
-                      basicPage(
-                        selectInput(inputId="mission_tcc", label="Mission", choices=factor(geopko$Mission),
-                                    width=150),
-                        radioButtons(inputId="databy_tcc", label="Present data by:", choices=c("Deployment map", "Year"),
-                                     selected="Deployment map (default)"),
-                        helpText("The GeoPKO dataset collects data using the UN's deployment maps. Data presented by year takes the number of TCCs from the first map of the year, while troop counts are presented by yearly max, min, and average values.")
+                                  plotOutput("depmap"),
+                                  span(h6(textOutput("basecountries"), align="center"))
+                                  ))
                       ),
-                      
-                      DT::dataTableOutput("tcc_table")
-             )
-  )
-  
-  
+                      tabPanel("Troop-contributing Countries",
+                               basicPage(
+                                 radioButtons(inputId="databy_tcc", label="Present data by:", choices=c("Deployment map", "Year"),
+                                              selected="Deployment map (default)"),
+                                 helpText("The GeoPKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of TCCs."),
+                                 # span(h6(textOutput("tabletext", align="right"))),
+                                 DT::dataTableOutput("tcc_table")
+                               )))
 )
 
 server <- function(input, output, session){
   #TCC tables
   bymap_df <- reactive({
-    req(input$mission_tcc)
-    tcc_df %>% filter(Mission %in% input$mission_tcc) %>%
-      pivot_longer(c(7:34), names_to=c(".value", "TCC_id"), names_sep="_")%>%
-      mutate(notroopsperTCC=as.numeric(notroopsperTCC)) %>%
-      select(-TCC_id, -No.TCC) %>% 
-      mutate(notroopsperTCC=as.numeric(notroopsperTCC)) %>%
-      group_by(Source, Mission, year, month, Total.troops, nameofTCC)%>%
-      summarise(total.tcc=sum(notroopsperTCC)) %>% 
+    tcc_df %>% 
+      pivot_longer(c(6:39), names_to=c(".value", "tcc_id"), names_sep="_")%>%
+      mutate(notroopspertcc=as.numeric(notroopspertcc)) %>%
+      filter(!is.na(nameoftcc)) %>%
+      select(-tcc_id) %>% 
+      group_by(Source, Mission, Year, Month, Total.troops, nameoftcc)%>%
+      summarise(total.tcc=sum(notroopspertcc)) %>% 
       add_count(Source, name="No.TCC") %>%
-      mutate(overview=paste0(nameofTCC, "-", total.tcc)) %>%
-      select(-nameofTCC, -total.tcc) %>%
-      group_by(Source, Mission, year, month, Total.troops, No.TCC) %>%
+      mutate(overview=paste0(nameoftcc, "-", total.tcc)) %>%
+      select(-nameoftcc, -total.tcc) %>%
+      group_by(Source, Mission, Year, Month, Total.troops, No.TCC) %>%
       summarise(details=str_c(overview, collapse=", ")) %>% 
-      arrange(desc(year))})
+      arrange(desc(Year))}) 
   
   byyear_df <- reactive({
-    req(input$mission_tcc)
-    tcc_df %>% filter(Mission %in% input$mission_tcc) %>%
-      pivot_longer(c(7:34), names_to=c(".value", "TCC_id"), names_sep="_")%>%
-      mutate(notroopsperTCC=as.numeric(notroopsperTCC)) %>%
-      select(-TCC_id, -No.TCC) %>% 
-      mutate(notroopsperTCC=as.numeric(notroopsperTCC)) %>%
-      group_by(Source, Mission, year, month, Total.troops, nameofTCC)%>%
-      summarise(total.tcc=sum(notroopsperTCC)) %>% 
+    tcc_df %>% 
+      pivot_longer(c(6:39), names_to=c(".value", "TCC_id"), names_sep="_")%>%
+      mutate(notroopspertcc=as.numeric(notroopspertcc)) %>%
+      filter(!is.na(nameoftcc)) %>%
+      select(-TCC_id) %>% 
+      group_by(Source, Mission, Year, Month, Total.troops, nameoftcc)%>%
+      summarise(total.each.tcc=sum(notroopspertcc)) %>% 
       add_count(Source, name="No.TCC") %>%
-      mutate(overview=paste0(nameofTCC, "-", total.tcc)) %>%
-      select(-nameofTCC, -total.tcc) %>%
-      group_by(Source, Mission, year, month, Total.troops, No.TCC) %>%
+      mutate(overview=paste0(nameoftcc, "-", total.each.tcc)) %>%
+      select(-nameoftcc, -total.each.tcc) %>%
+      group_by(Source, Mission, Year, Month, Total.troops, No.TCC) %>%
       summarise(details=str_c(overview, collapse=", ")) %>% 
-      arrange(desc(year)) %>%
-      group_by(Mission, year) %>% mutate(min.troops= min(Total.troops),
-                                         max.troops=max(Total.troops),
-                                         ave.troops=round(mean(Total.troops))) %>%
-      group_by(year) %>% dplyr::slice(1) %>% 
-      select(Mission, year, No.TCC, details, min.troops, max.troops, ave.troops)
+      arrange(desc(Year)) %>%
+      group_by(Mission, Year) %>% mutate(min.troops= as.character(min(Total.troops)),
+                                         max.troops=as.character(max(Total.troops)),
+                                         ave.troops=as.character(round(mean(Total.troops)))) %>%
+      group_by(Mission, Year) %>% arrange(desc(No.TCC)) %>% dplyr::slice(1) %>% 
+      mutate(ave.troops=ifelse(is.na(ave.troops), "Unknown", ave.troops),
+             min.troops=ifelse(is.na(min.troops), "Unknown", min.troops),
+             max.troops=ifelse(is.na(max.troops), "Unknown", max.troops)) %>%
+      select(Mission, Year, No.TCC, details, min.troops, max.troops, ave.troops)
   })
   
+  # output$tabletext <- renderText({
+  #   req(input$databy_tcc)
+  #   if(input$databy_tcc=="Deployment map"){
+  #   paste("")  
+  #   }
+  #   else if(input$databy_tcc=="Year"){
+  #   paste("Data collected")
+  #   }
+  # })
+  #   
   output$tcc_table <- DT::renderDataTable({
     req(input$databy_tcc)
     if(input$databy_tcc=="Deployment map"){
       DT::datatable(bymap_df(),
-                    colnames = c("Source map", "Mission", "Year", "Month", "Number of TCCs", 
+                    colnames = c("Source map", "Mission", "Year", "Month", 
+                                 "Total Troop Count", "Number of TCCs", 
                                  "Details"),
                     rownames = FALSE)
     }
@@ -170,41 +189,87 @@ server <- function(input, output, session){
     
   })
   
+  output$basecountries <- renderText({
+    countrieslist <- map_df_temp() %>% distinct(Country)
+    paste("This mission took place in",paste(unique(map_df_temp()$Country), collapse=", "),".")
+  })
+  
+  UNMO_df_temp <- reactive({
+    map_df_temp() %>% filter(UNMO.dummy==1)
+  })
+  
+  UNPOL_df_temp <- reactive({
+    map_df_temp() %>% filter(UNPOL.dummy==1)
+  })
+  
+  SHQ_df_temp <- reactive({
+    map_df_temp() %>% filter(HQ==2)
+  })
+  
+  
   output$depmap <- renderPlot({
     input$depsize_map
     input$MHQ_map
     input$SHQ_map
     input$MO_map
+    input$UNPOL_map
     
-    maplist <- pull(sfdf(), alpha_3)
+    maplist <- pull(sfdf(), a3)
     mapshapefiles <- gadm_sf_loadCountries(c(paste(maplist)), level=1)
+    
+
     p <- ggplot() + geom_sf(data=mapshapefiles$sf) + 
       theme_void() + 
-      labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint), 
-           caption="Data from GeoPKO v1.2\n Shapefiles from GADM.")
+      labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
+           caption="Sources: GeoPKO v1.2\n Shapefiles from GADM.")+
+      geom_blank()+
+      scale_shape_manual(values=c(3, 5, 23), 
+                         labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+                         name="")
     if(input$depsize_map){
-      p <- p + geom_point(data=map_df_temp(), aes(x=longitude, y=latitude, size=No.troops, color=No.troops),
+      p <- p + geom_point(data=map_df_temp(), aes(x=Longitude, y=Latitude, size=No.troops, color=as.factor(No.TCC)),
                           shape=20, alpha = 0.5)+
         scale_size_continuous(name="Size of deployment",range=c(2, 20))+
-        scale_color_viridis_c(name="Size of deployment")+
+        scale_color_brewer(palette="Set1", name="Number of TCCs")+
         guides(colour = guide_legend())} 
     if(input$MHQ_map){
-      p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==3), aes(x=longitude, y=latitude),
+      p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==3), aes(x=Longitude, y=Latitude, shape="HQ"),
                            shape=4, color="red", size=6)+
         geom_label_repel(data=map_df_temp() %>% filter(HQ==3), 
-                            aes(x=longitude, y=latitude, label=paste("Mission HQ: ",location)
-                            ))} 
+                         aes(x=Longitude, y=Latitude, label=paste0("Mission HQ: ",Location)
+                         ),
+                         box.padding = 2,
+                         size = 3, 
+                         fill = alpha(c("white"),0.7))} 
     if(input$SHQ_map){
+      if(length(SHQ_df_temp()$Location>1)){
       p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==2), 
-                           aes(x=longitude, y= latitude), shape=3, color="orange", size=5)} 
-    if(input$MO_map){ 
-      p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO..dummy.==1), 
-                           aes(x=longitude, y= latitude), shape=5, color="darkgreen", size=3)}
+                           aes(x=Longitude, y= Latitude, shape="SHQ"), color="orange", size=5)}
+      else{
+        p <- p + labs(subtitle="Sector HQs not available. Please deselect the option.")}  
+      }
+    if(input$MO_map){
+      if(length(UNMO_df_temp()$Location)>1){
+        p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO.dummy==1), 
+                             aes(x=Longitude, y= Latitude, shape="UNMO"), color="darkgreen", size=3)}
+      else{
+        p <- p + labs(subtitle="UNMO not found. Please deselect the option.")}  
+    }
     
-    p 
+    if(input$UNPOL_map){
+      if(length(UNPOL_df_temp()$Location)>1){
+        p <- p +  geom_point(data=map_df_temp() %>% filter(UNPOL.dummy==1), 
+                             aes(x=Longitude, y= Latitude, shape="UNPOL"), color="darkblue", size=4)}
+      else{
+        p <- p + labs(subtitle="UNPOL not found. Please deselect the option.")}
+    }
     
-  }
-  )
+    p + theme(plot.subtitle = element_text(color="red"),
+              legend.text.align = 0)
+    p
+
+    
+})
   
   
 }

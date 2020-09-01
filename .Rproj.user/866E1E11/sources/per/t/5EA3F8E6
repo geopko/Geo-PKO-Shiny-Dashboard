@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1598554552269.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "5EA3F8E6",
+    "lastKnownWriteTime" : 7308604914264011873,
+    "last_content_update" : 1598554552269,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "6E648685",
+        "caption" : "geopko",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=geopko&cache_key=6E648685",
+        "displayedObservations" : 12190,
+        "environment" : "",
+        "object" : "geopko",
+        "preview" : 0,
+        "totalObservations" : 12190,
+        "variables" : 71
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
