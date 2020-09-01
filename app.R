@@ -40,13 +40,9 @@ iso <- read.csv("geopko_ccode2.csv")
 # data prep TCC
 
 geopko <- geopko %>% 
-  mutate(No.troops=as.numeric(No.troops),
-         No.TCC=as.numeric(No.TCC),
-         Longitude=as.numeric(Longitude),
-         Latitude=as.numeric(Latitude),
-         UNMO.dummy=as.numeric(UNMO.dummy),
-         UNPOL.dummy=as.numeric(UNPOL.dummy),
-         HQ=as.factor(HQ)) 
+  mutate_at(vars(c(No.troops, No.TCC, Longitude, Latitude,
+                   UNMO.dummy, UNPOL.dummy)), as.numeric) %>% 
+  mutate(HQ=as.factor(HQ))
 
 tcc_df <- geopko %>% select(Source, Mission, Year, Month, No.troops, 52:85) %>% 
   group_by(Source, Mission, Year, Month) %>% 
