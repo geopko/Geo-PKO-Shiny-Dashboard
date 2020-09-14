@@ -158,7 +158,7 @@ server <- function(input, output, session){
   #TCC tables
   bymap_df <- reactive({
     tcc_df %>% 
-      pivot_longer(c(6:39), names_to=c(".value", "tcc_id"), names_sep="_")%>%
+      pivot_longer(c(nameoftcc_1:notroopspertcc_17), names_to=c(".value", "tcc_id"), names_sep="_")%>%
       mutate(notroopspertcc=as.numeric(notroopspertcc)) %>%
       filter(!is.na(nameoftcc)) %>%
       select(-tcc_id) %>% 
@@ -174,7 +174,7 @@ server <- function(input, output, session){
   
   byyear_df <- reactive({
     tcc_df %>% 
-      pivot_longer(c(6:39), names_to=c(".value", "TCC_id"), names_sep="_")%>%
+      pivot_longer(c(nameoftcc_1:notroopspertcc_17), names_to=c(".value", "TCC_id"), names_sep="_")%>%
       mutate(notroopspertcc=as.numeric(notroopspertcc)) %>%
       filter(!is.na(nameoftcc)) %>%
       select(-TCC_id) %>% 
@@ -248,7 +248,7 @@ server <- function(input, output, session){
   
   output$basecountries <- renderText({
     countrieslist <- map_df_temp() %>% distinct(Country)
-    paste("This mission took place in",paste(unique(map_df_temp()$Country), collapse=", "),".")
+    paste0("This mission took place in: ",paste(unique(map_df_temp()$Country), collapse=", "),".")
   })
   
   UNMO_df_temp <- reactive({
