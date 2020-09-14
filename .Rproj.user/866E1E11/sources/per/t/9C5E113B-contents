@@ -10,7 +10,7 @@ if(!require(ggplot2)) install.packages("ggplot2", repos = "http://cran.us.r-proj
 if(!require(reshape2)) install.packages("reshape2", repos = "http://cran.us.r-project.org")
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
 if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
-if(!require(plotly)) install.packages("plotly", repos = "http://cran.us.r-project.org")
+#if(!require(plotly)) install.packages("plotly", repos = "http://cran.us.r-project.org")
 if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
 if(!require(shiny)) install.packages("shiny", repos = "http://cran.us.r-project.org")
 if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = "http://cran.us.r-project.org")
@@ -25,16 +25,24 @@ if(!require(DT)) install.packages("shinythemes", repos = "http://cran.us.r-proje
 if(!require(GADMTools)) install.packages("GADMTools")
 if(!require(Cairo)) install.packages("Cairo")
 if(!require(ggrepel)) install.packages("ggrepel")
+if(!require(forcats)) install.packages("forcats")
+if(!require(sp)) install.packages("sp")
+if(!require(zoo)) install.packages("zoo")
+if(!require(gifski)) install.packages("gifski")
+if(!require(png)) install.packages("png")
+if(!require(gganimate)) install.packages("gganimate")
+
 if(!require(foreign)) install.packages("foreign", repos = "https://svn.r-project.org/")
 
 options(shiny.usecairo=TRUE)
-# import data
+####import data####
 
-geopko <- read_csv("geopko2.csv", col_types = cols(.default="c"))
+geopko <- readr::read_csv("geopko2.csv", col_types = cols(.default="c"),
+                          locale=readr::locale(encoding="latin1"))
 iso <- read.csv("geopko_ccode2.csv")
 
 
-# data prep TCC
+####data prep TCC####
 
 geopko <- geopko %>% 
   mutate(No.troops=as.numeric(No.troops),
@@ -55,48 +63,96 @@ tcc_df <- geopko %>% select(Source, Mission, Year, Month, No.troops, 52:85) %>%
 #tcc_df <- tcc_df %>% mutate_at(vars(starts_with("notroopsperTCC")), as.character) %>% 
 #  mutate_at(vars(starts_with("nameofTCC")), as.character) %>% 
 
-#data prep: creating list of country codes for GADM sf files dowload
+####map data prep####
 
-cclist3 <- iso %>% select(Mission, a3) %>% distinct() 
-map_df <- geopko %>% unite(timepoint, c("Year","Month"), sep="-") %>% 
-  mutate(timepoint=as.factor(timepoint))
+cclist3 <- iso %>% select(Mission, a3) %>% distinct() #creating list of country codes for GADM sf files dowload 
 
-#data prep for single-map generator
+map_df <- geopko %>% unite(joined_date, c("Year","Month"), sep="-") %>% 
+  mutate(timepoint=as.factor(joined_date)) %>% 
+  mutate(slider_time=as.Date(joined_date, "%Y-%B"))
 
-#data prep for facet maps
+####lollipop dataprep####
 
-# designing the UI
+Years <- geopko
+Years <- Years %>% group_by(Mission, Location)%>% summarize(start_date=min(Year), end_date=max(Year))
+
+####data prep for facet maps####
+
 
 ui <- fluidPage(
   navbarPage("Exploring GeoPKO",
-             tabPanel("Map Generator",
+             
+             navbarMenu("Map Generators",
+                        tabPanel("Static Maps", fluid=TRUE,
+                                 titlePanel("Static Maps"),
+                                 sidebarLayout(
+                                   sidebarPanel(width=3, 
+                                                p("Where are UN peacekeepers posted, and how many? Select the options below to visualize."),
+                                                selectInput(inputId="mission_map", label="Select a mission",
+                                                            choices=factor(geopko$Mission), width=150),
+                                                selectInput("timepoint_map", 
+                                                            "Choose source's timepoint", choices=NULL),
+                                                checkboxInput(inputId="depsize_map", 
+                                                              "Deployment size", value=TRUE),
+                                                checkboxInput(inputId="MHQ_map", 
+                                                              "Mission HQ", value=FALSE),
+                                                checkboxInput(inputId="SHQ_map", 
+                                                              "Sector HQ", value=FALSE),
+                                                checkboxInput(inputId="MO_map", 
+                                                              "UNMO", value=FALSE),
+                                                checkboxInput(inputId="UNPOL_map", 
+                                                              "UNPOL", value=FALSE),
+                                                helpText("Errors may occur when a selected feature is not available for a map. Please deselect the option.")
+                                   ),
+                                   mainPanel(fluid=TRUE,
+                                             plotOutput("depmap"),
+                                             span(h6(textOutput("basecountries"), align="center"))
+                                   ))
+                        ),
+                        ####animated maps UI####
+                        tabPanel("Animated Maps", fluid=TRUE,
+                                 titlePanel("Animated Maps"),
+                                 sidebarLayout(
+                                   sidebarPanel(width=3, 
+                                                p(""),
+                                                selectInput(inputId="anim_map", label="Select a mission to visualize",
+                                                            choices=factor(geopko$Mission), width=200)
+                                                
+                                                # sliderInput(inputId="anim_timeslider", 
+                                                #             label= "Select deployment period", 
+                                                #             value= c(x,y), 
+                                                #             min= x,
+                                                #             max= y
+                                                #         )
+                                   ),
+                                   mainPanel(fluid=TRUE, 
+                                             imageOutput("animated"))))),
+             tabPanel("Troop-contributing Countries",
+                      basicPage(
+                        radioButtons(inputId="databy_tcc", 
+                                     label="Present data by:", 
+                                     choices=c("Deployment map", "Year"),
+                                     selected="Deployment map (default)"),
+                        helpText("The GeoPKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of TCCs."),
+                        # span(h6(textOutput("tabletext", align="right"))),
+                        DT::dataTableOutput("tcc_table")
+                      )),
+             tabPanel("Time Maps",
                       sidebarLayout(
                         sidebarPanel(
-                          p("Where are UN peacekeepers posted, and how many? Select the options below to visualize."),
-                          selectInput(inputId="mission_map", label="Select a mission",
-                                      choices=factor(geopko$Mission), width=150),
-                          selectInput("timepoint_map", "Choose source's timepoint", choices=NULL),
-                          checkboxInput(inputId="depsize_map", "Deployment size", value=TRUE),
-                          checkboxInput(inputId="MHQ_map", "Mission HQ", value=FALSE),
-                          checkboxInput(inputId="SHQ_map", "Sector HQ", value=FALSE),
-                          checkboxInput(inputId="MO_map", "UNMO", value=FALSE),
-                          checkboxInput(inputId="UNPOL_map", "UNPOL", value=FALSE),
-                          helpText("Errors may occur when a selected feature is not available for a map. Please deselect the option.")
+                          p("What locations had Peacekeepers when? Select the options below to visualize."),
+                          selectInput(inputId="Lollipop_map", label="Select a mission",
+                                      choices=factor(Years$Mission), width=150), width= 3,
+                          p("The lollipop graphs show per mission the years in which a location had active deployment of peacekeepers.")
                         ),
                         mainPanel(fluid=TRUE,
-                                  plotOutput("depmap"),
-                                  span(h6(textOutput("basecountries"), align="center"))
-                                  ))
-                      ),
-                      tabPanel("Troop-contributing Countries",
-                               basicPage(
-                                 radioButtons(inputId="databy_tcc", label="Present data by:", choices=c("Deployment map", "Year"),
-                                              selected="Deployment map (default)"),
-                                 helpText("The GeoPKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of TCCs."),
-                                 # span(h6(textOutput("tabletext", align="right"))),
-                                 DT::dataTableOutput("tcc_table")
-                               )))
+                                  plotOutput("lollipop", height="auto")
+                        )
+                      ))
+  )
 )
+
+
 
 server <- function(input, output, session){
   #TCC tables
@@ -107,9 +163,10 @@ server <- function(input, output, session){
       filter(!is.na(nameoftcc)) %>%
       select(-tcc_id) %>% 
       group_by(Source, Mission, Year, Month, Total.troops, nameoftcc)%>%
-      summarise(total.tcc=sum(notroopspertcc)) %>% 
+      summarise(total.tcc=sum(notroopspertcc, na.rm=TRUE)) %>% 
       add_count(Source, name="No.TCC") %>%
-      mutate(overview=paste0(nameoftcc, "-", total.tcc)) %>%
+      mutate(total.tcc=ifelse(is.na(total.tcc), "unknown", total.tcc)) %>% 
+      mutate(overview=paste0(nameoftcc," (",total.tcc,")")) %>%
       select(-nameoftcc, -total.tcc) %>%
       group_by(Source, Mission, Year, Month, Total.troops, No.TCC) %>%
       summarise(details=str_c(overview, collapse=", ")) %>% 
@@ -122,9 +179,10 @@ server <- function(input, output, session){
       filter(!is.na(nameoftcc)) %>%
       select(-TCC_id) %>% 
       group_by(Source, Mission, Year, Month, Total.troops, nameoftcc)%>%
-      summarise(total.each.tcc=sum(notroopspertcc)) %>% 
+      summarise(total.each.tcc=sum(notroopspertcc, na.rm=TRUE)) %>% 
       add_count(Source, name="No.TCC") %>%
-      mutate(overview=paste0(nameoftcc, "-", total.each.tcc)) %>%
+      mutate(total.each.tcc=ifelse(is.na(total.each.tcc),"unknown", total.each.tcc)) %>% 
+      mutate(overview=paste0(nameoftcc," (",total.each.tcc,")")) %>%
       select(-nameoftcc, -total.each.tcc) %>%
       group_by(Source, Mission, Year, Month, Total.troops, No.TCC) %>%
       summarise(details=str_c(overview, collapse=", ")) %>% 
@@ -166,8 +224,7 @@ server <- function(input, output, session){
     }
   })
   
-  #deployment maps
-  #update timepoint inputs based on filtering for mission
+  ####deployment maps####
   
   #creating list of sf objects to download
   sfdf <- reactive({
@@ -217,7 +274,7 @@ server <- function(input, output, session){
     maplist <- pull(sfdf(), a3)
     mapshapefiles <- gadm_sf_loadCountries(c(paste(maplist)), level=1)
     
-
+    
     p <- ggplot() + geom_sf(data=mapshapefiles$sf) + 
       theme_void() + 
       labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
@@ -230,8 +287,9 @@ server <- function(input, output, session){
       p <- p + geom_point(data=map_df_temp(), aes(x=Longitude, y=Latitude, size=No.troops, color=as.factor(No.TCC)),
                           shape=20, alpha = 0.5)+
         scale_size_continuous(name="Size of deployment",range=c(2, 20))+
-        scale_color_brewer(palette="Set1", name="Number of TCCs")+
-        guides(colour = guide_legend())} 
+      #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
+        scale_color_discrete(name="Number of TCCs")+
+        guides(colour = guide_legend(ncol=2, override.aes = list(size=2)))} 
     if(input$MHQ_map){
       p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==3), aes(x=Longitude, y=Latitude, shape="HQ"),
                            shape=4, color="red", size=6)+
@@ -243,11 +301,11 @@ server <- function(input, output, session){
                          fill = alpha(c("white"),0.7))} 
     if(input$SHQ_map){
       if(length(SHQ_df_temp()$Location>1)){
-      p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==2), 
-                           aes(x=Longitude, y= Latitude, shape="SHQ"), color="orange", size=5)}
+        p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==2), 
+                             aes(x=Longitude, y= Latitude, shape="SHQ"), color="orange", size=5)}
       else{
         p <- p + labs(subtitle="Sector HQs not available. Please deselect the option.")}  
-      }
+    }
     if(input$MO_map){
       if(length(UNMO_df_temp()$Location)>1){
         p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO.dummy==1), 
@@ -267,11 +325,110 @@ server <- function(input, output, session){
     p + theme(plot.subtitle = element_text(color="red"),
               legend.text.align = 0)
     p
-
     
-})
+    
+  })
+  ####animated maps####
+  anim_sf <- reactive({
+    req(input$anim_map)
+    cclist3 %>% filter(Mission %in% input$anim_map)
+  })
+  
+  anim_df <- reactive({
+    req(input$anim_map)
+    map_df %>% filter(Mission %in% input$anim_map) %>% arrange(joined_date)
+  }) 
   
   
-}
+  
+  output$animated <- renderImage({
+    outfile <- tempfile(fileext= '.gif')
+    
+    anim_maplist <- pull(anim_sf(), a3)
+    anim_mapshapefiles <- gadm_sf_loadCountries(c(paste(anim_maplist)), level=1)
+    mission_name <- anim_df() %>% distinct(Mission)
+    colourCount = max(anim_df()$No.TCC)
+    getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+    
+    anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
+      theme_void() + 
+      geom_point(data=anim_df(), aes(x=Longitude, y=Latitude, size=No.troops, 
+                                     color=as.factor(No.TCC), group=joined_date),
+                 shape=20, alpha = 0.5)+
+      scale_size_continuous(name="Size of deployment",range=c(2, 20))+
+      guides(color=guide_legend(ncol=2, override.aes = list(size=2)))+
+      scale_color_discrete(name="Number of TCCs")+
+      transition_states(states=anim_df()$joined_date)+
+      labs(title=paste0(mission_name,": ", "{closest_state}"),
+           caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
+      ease_aes('linear')
+    
+    anim_save("outfile.gif", animate(anim_p, fps = 4, width=650, height=400, res=100))
+    
+    list(src="outfile.gif",
+         contentType='image/gif'
+    )}, deleteFile= TRUE)
+  
+  
+  # observeEvent(input$anim_map,{
+  #   anim_temp <- map_df %>% filter(Mission %in% input$anim_map)
+  #   
+  #   updateSliderInput(session, 'anim_timepoint',
+  #                     min = as.Date(min(anim_temp$slider_time), "%Y-%B"),
+  #                     max = as.Date(max(anim_temp$slider_time), "%Y-%B"))
+  #   
+  # }) reserve for time input
+  
+  # map_df_temp <- reactive({
+  #   req(input$mission_map)
+  #   req(input$timepoint_map)
+  #   map_df %>% filter(Mission %in% input$mission_map) %>%
+  #     filter(timepoint %in% input$timepoint_map)
+  #   
+  # })
+  
+  ####lollipop####
+  lollipop_df <- reactive({
+    req(input$Lollipop_map)
+    Years %>% filter(Mission %in% input$Lollipop_map) %>% 
+      mutate_at(vars(c(start_date, end_date)), as.numeric)
+  })
+  
+  height_lollipop <-  reactive({
+    if(nrow(lollipop_df())<15){400}
+    else{NROW(lollipop_df())*25+300}
+  })
+  
+  
+  output$lollipop <- renderPlot({
+    lolli <-   ggplot(lollipop_df()) +
+      geom_segment(aes(x=start_date, xend=end_date, 
+                       y=fct_reorder(Location, start_date), 
+                       yend=fct_reorder(Location, start_date)), color="grey") +
+      geom_point(aes(x=end_date, y=Location), 
+                 colour=rgb(0.9,0.3,0.1,0.9), size=3.5 ) +
+      geom_point(aes(x=start_date, y=Location), 
+                 colour=rgb(1.0,0.6,0.1,0.7), size=3) +
+      scale_x_continuous(breaks = 
+                           seq(1993,2020,1))+
+      theme_bw() +
+      theme(plot.title = element_text(hjust = 0.5),
+            legend.position = "none",
+            axis.text.x = element_text(angle=45, hjust=1),
+            axis.ticks.length.x= unit(0.1, "cm"),
+            panel.grid.minor.x = element_blank(),
+            panel.spacing.x = unit(1,"lines")
+            
+      ) +
+      xlab("Years") +
+      ylab("")+ #since the title already mentions locations, maybe it's selfexpl.?
+      labs(title=paste0(lollipop_df()$Mission,": ", "Locations & durations"), 
+           caption="Data: GeoPKO 2.0")
+    lolli
+  }, height=height_lollipop)
+  
+}  
+
+
 
 shinyApp(ui=ui, server=server)
