@@ -115,15 +115,15 @@ ui <- fluidPage(
                                                 helpText("Errors may occur when a selected feature is not available for a map. If that happens, please deselect the option.")
                                    ),
                                    mainPanel(
-                                             withSpinner(plotOutput("depmap", height="auto")),
-                                             span(h6(textOutput("basecountries"), align="center")),
-                                             hr(),
-                                             fluidRow(
-                                               DT::dataTableOutput(outputId="map_df_details")
-                                             )
-                                             
-                                             )
+                                     withSpinner(plotOutput("depmap", height="auto")),
+                                     span(h6(textOutput("basecountries"), align="center")),
+                                     hr(),
+                                     fluidRow(
+                                       DT::dataTableOutput(outputId="map_df_details")
+                                     )
+                                     
                                    )
+                                 )
                         ),
                         ####animated maps UI####
                         tabPanel("Animated Maps", fluid=TRUE,
@@ -314,14 +314,16 @@ server <- function(input, output, session){
         p <- p + 
           geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0), 
                      aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
-                     shape=20, alpha = 0.5)+
+                     shape=20, alpha = 0.8)+
           scale_size_binned(name="Size of deployment",range=c(2, 16))+
-          {if(map_df_temp()$No.TCC<=4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", guide="colorbar", name="Number of TCCs",
+          {if(max(map_df_temp()$No.TCC)<=4)list(
+            scale_color_continuous(low = "thistle3", high = "darkred", 
+                                   guide="colorbar", name="Number of TCCs",
                                    breaks=c(1,2,3,4),
                                    limits=c(1,4)))}+
-          {if(map_df_temp()$No.TCC>4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", guide="colorbar", name="Number of TCCs",
+          {if(max(map_df_temp()$No.TCC)>4)list(
+            scale_color_continuous(low = "thistle3", high = "darkred", 
+                                   guide="colorbar", name="Number of TCCs",
                                    breaks=pretty_breaks()))}+
           new_scale_color()+
           
@@ -331,12 +333,13 @@ server <- function(input, output, session){
           scale_shape_manual(values=c("Blank"=22),
                              labels=c("Blank"="Locations with no troops recorded"),
                              name="")+
-          new_scale("shape")+
+          
           scale_color_manual(values=c("Blank"="grey44"),
                              labels=c("Blank"="Locations with no troops recorded"),
                              name="")+
           # guides(shape=guide_legend(title="", order=3), color=guide_legend(title="", order=3))+
           new_scale_color()+
+          new_scale("shape")+
           scale_shape_manual(values=c("SHQ"=3,
                                       "UNMO"=24,
                                       "UNPOL"=23),
@@ -351,26 +354,32 @@ server <- function(input, output, session){
       else{
         p <- p + geom_point(data=map_df_temp(), 
                             aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
-                            shape=20, alpha = 0.5)+
+                            shape=20, alpha = 0.8)+
           scale_size_binned(name="Size of deployment",range=c(2, 16))+
           #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
-          {if(map_df_temp()$No.TCC<=4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", guide="colorbar", name="Number of TCCs",
+          {if(max(map_df_temp()$No.TCC)<=4)list(
+            scale_color_continuous(low = "thistle3", high = "darkred", 
+                                   guide="colorbar", name="Number of TCCs",
                                    breaks=c(1,2,3,4),
                                    limits=c(1,4)))}+
-          {if(map_df_temp()$No.TCC>4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", guide="colorbar", name="Number of TCCs",
+          {if(max(map_df_temp()$No.TCC)>4)list(
+            scale_color_continuous(low = "thistle3", high = "darkred", 
+                                   guide="colorbar", name="Number of TCCs",
                                    breaks=pretty_breaks()))}+
-        new_scale_color()+
+          new_scale_color()+
           scale_shape_manual(values=c("SHQ"=3,
                                       "UNMO"=24,
                                       "UNPOL"=23),
-                             labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+                             labels=c("SHQ"="Sector HQ", 
+                                      "UNMO"="Military Observers", 
+                                      "UNPOL"="UN Police"),
                              name="Non-combat functions")+
           scale_color_manual(values=c("SHQ"="orange",
                                       "UNMO"="darkblue",
                                       "UNPOL"="darkgreen"),
-                             labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+                             labels=c("SHQ"="Sector HQ", 
+                                      "UNMO"="Military Observers", 
+                                      "UNPOL"="UN Police"),
                              name="Non-combat functions")
       }
     }
@@ -425,16 +434,16 @@ server <- function(input, output, session){
       #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
       #                    name="Non-combat functions")+
       # scale_shape_manual(values=c("SHQ"=3,
-      #                             "UNMO"=24,
-      #                             "UNPOL"=23,
-      #                             "Blank"=22),
-      #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police",
-      #                             "Blank"="Locations with no deployment recorded*"),
-      #                    name="Non-combat functions",
-      #                    guide = guide_legend(title = NULL))+
-      # scale_color_manual(values=c("SHQ"="orange",
-      #                             "UNMO"="darkblue",
-      #                             "UNPOL"="darkgreen",
+    #                             "UNMO"=24,
+    #                             "UNPOL"=23,
+    #                             "Blank"=22),
+    #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police",
+    #                             "Blank"="Locations with no deployment recorded*"),
+    #                    name="Non-combat functions",
+    #                    guide = guide_legend(title = NULL))+
+    # scale_color_manual(values=c("SHQ"="orange",
+    #                             "UNMO"="darkblue",
+    #                             "UNPOL"="darkgreen",
     #                             "Blank"="grey40"),
     #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police",
     #                             "Blank"="Locations with no deployment recorded*"),
@@ -443,7 +452,7 @@ server <- function(input, output, session){
     # guides(color=guide_legend("Non-combat functions"), shape=guide_legend("Non-combat functions"))+
     theme(plot.subtitle = element_text(color="red"),
           plot.title=element_text(face="bold", hjust=0),
-    #      plot.caption.position = "plot",
+          #      plot.caption.position = "plot",
           plot.caption = element_text(hjust=1),
           legend.direction = "horizontal", 
           legend.position = "bottom", 
@@ -458,7 +467,7 @@ server <- function(input, output, session){
   static_map_details <- reactive({
     map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
       select(ID, Location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
-                             -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
+             -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
       mutate(across(everything(), as.character)) %>% 
       pivot_longer(5:23, names_to="trooptypes", values_to="binary") %>% 
       filter(binary==1) %>% 
@@ -471,7 +480,7 @@ server <- function(input, output, session){
   output$map_df_details <- renderDataTable({
     DT::datatable(static_map_details(), 
                   rownames = FALSE)
-  
+    
   })
   
   ####animated maps####
