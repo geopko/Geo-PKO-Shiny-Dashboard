@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1599571380827.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "EFA01EDC",
+    "lastKnownWriteTime" : 5292976843906638626,
+    "last_content_update" : 1599571380827,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "F5E51E5F",
+        "caption" : "tcc_df3",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=tcc_df3&cache_key=F5E51E5F",
+        "displayedObservations" : 20535,
+        "environment" : "",
+        "object" : "tcc_df3",
+        "preview" : 0,
+        "totalObservations" : 20535,
+        "variables" : 11
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
