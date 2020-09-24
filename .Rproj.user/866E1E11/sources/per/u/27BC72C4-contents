@@ -1,0 +1,41 @@
+map_df <- geopko %>% 
+  mutate(timepoint=as.factor(str_c(Year, Month, sep="-"))) %>% 
+  mutate(slider_time=zoo::as.yearmon(str_c(Year, Month, sep="-"), "%Y-%B"))
+
+map_df <- geopko %>% unite(joined_date, c("Year","Month"), sep="-") %>% 
+  mutate(timepoint=as.factor(joined_date)) %>% 
+  mutate(slider_time=zoo::as.yearmon(joined_date, "%Y-%B"))
+
+library(zoo)
+
+anim_sf <- reactive({
+  req(input$anim_map)
+  cclist3 %>% filter(Mission %in% input$anim_map)
+})
+
+
+anim_df <- reactive({
+  req(input$anim_map)
+  map_df %>% filter(Mission %in% input$anim_map) 
+}) 
+
+
+output$animated <- renderImage({
+  outfile <- tempfile(fileext= '.gif')
+  
+  maplist <- pull(anim_sf(), a3)
+  anim_mapshapefiles <- gadm_sf_loadCountries(c(paste(maplist)), level=1)
+  
+  anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
+    theme_void() + 
+    geom_blank()+
+    geom_point(data=anim_df(), aes(x=Longitude, y=Latitude, size=No.troops, 
+                                   color=as.factor(No.TCC), group=timepoint),
+               shape=20, alpha = 0.5)+
+    scale_size_continuous(name="Size of deployment",range=c(2, 20))+
+    scale_color_brewer(palette="Set1", name="Number of TCCs")+
+    guides(colour = guide_legend())+
+    transition_states(states=timepoint, transition_length= 3, state_length=3)+
+    labs(title=paste0(anim_df()$Mission,": ", anim_df()$timepoint),
+         caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
+    enter_fade()

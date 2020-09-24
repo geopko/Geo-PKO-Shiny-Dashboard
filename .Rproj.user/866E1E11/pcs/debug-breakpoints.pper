@@ -1,6 +1,21 @@
 {
-    "debugBreakpointsState" : {
-        "breakpoints" : [
+    "debugBreakpointsState": {
+        "breakpoints": [
+            {
+                "editor_line_number": 372,
+                "editor_state": 1,
+                "function_name": "toplevel",
+                "function_steps": "",
+                "id": 0,
+                "is_package_breakpoint": false,
+                "is_pending_debug_completion": false,
+                "line_number": 372,
+                "needs_updated_steps": true,
+                "package_name": "",
+                "path": "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard/app.R",
+                "state": 1,
+                "type": 1
+            }
         ]
     }
 }

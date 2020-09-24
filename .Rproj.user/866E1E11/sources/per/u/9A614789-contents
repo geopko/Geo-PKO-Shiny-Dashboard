@@ -1,0 +1,24 @@
+bymap_df <- 
+  tcc_df %>% filter(Mission=="UNIFIL", Source=="Map NO. 3000 Rev. 40") %>% 
+    pivot_longer(c(nameoftcc_1:notroopspertcc_17), names_to=c(".value", "tcc_id"), names_sep="_") %>%
+    filter(!is.na(nameoftcc)) %>%
+    mutate_at(vars(notroopspertcc), as.numeric) %>% 
+    select(-tcc_id) %>% 
+    group_by(Source, Mission, Year, Month, Total.troops, nameoftcc)%>%
+    summarise(total.tcc=sum(notroopspertcc)) %>% 
+    add_count(Source, name="No.TCC") %>%
+    mutate(total.tcc=ifelse(is.na(total.tcc), "size unknown", total.tcc), 
+           overview=paste0(nameoftcc," (",total.tcc,")")) %>%
+    group_by(Source, Mission, Year, Month, Total.troops, No.TCC) %>%
+    summarise(details=str_c(overview, collapse=", ")) %>% 
+    arrange(desc(Year))
+
+map_df %>% tibble::rowid_to_column("ID") %>% 
+  select(ID, Location, No.troops, RPF:UAV, Other.Type, -RPF_No,
+         -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
+  pivot_longer(4:22, names_to="trooptypes", values_to="binary") %>% 
+  filter(binary==1) %>% 
+  mutate(trooptypes=ifelse(trooptypes=="Other.Type", "Others", trooptypes)) %>% 
+  group_by(ID, Location, No.troops) %>% 
+  summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% 
+  select(-ID) -> test

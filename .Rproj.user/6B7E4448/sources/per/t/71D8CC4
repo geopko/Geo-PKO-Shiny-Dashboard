@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1600957233408.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "12422786",
+    "id" : "71D8CC4",
+    "lastKnownWriteTime" : 1600957256,
+    "last_content_update" : 1600957256505,
+    "path" : "~/R/Geo-PKO-Shiny-v2.0/scrap_app_prerestructure.R",
+    "project_path" : "scrap_app_prerestructure.R",
+    "properties" : {
+        "cursorPosition" : "589,0",
+        "scrollLine" : "563",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

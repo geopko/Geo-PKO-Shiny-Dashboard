@@ -1,22 +1,25 @@
 {
-    "collab_server" : "",
-    "contents" : "",
-    "created" : 1598534384878.000,
-    "dirty" : false,
-    "encoding" : "UTF-8",
-    "folds" : "",
-    "hash" : "2588542176",
-    "id" : "9C5E113B",
-    "lastKnownWriteTime" : 1598536903,
-    "last_content_update" : 1598536903697,
-    "path" : "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard/app.R",
-    "project_path" : "app.R",
-    "properties" : {
-        "cursorPosition" : "267,35",
-        "scrollLine" : "252"
+    "id": "9C5E113B",
+    "path": "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard/app.R",
+    "project_path": "app.R",
+    "type": "r_source",
+    "hash": "3409729304",
+    "contents": "",
+    "dirty": false,
+    "created": 1598534384878.0,
+    "source_on_save": false,
+    "relative_order": 1,
+    "properties": {
+        "cursorPosition": "323,47",
+        "docOutlineVisible": "0",
+        "scrollLine": "304"
     },
-    "relative_order" : 1,
-    "source_on_save" : false,
-    "source_window" : "",
-    "type" : "r_source"
+    "folds": "",
+    "lastKnownWriteTime": 1600947915,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1600947915448,
+    "read_only": false,
+    "read_only_alternatives": []
 }

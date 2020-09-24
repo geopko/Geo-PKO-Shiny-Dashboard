@@ -1,0 +1,31 @@
+{
+    "id": "AFA00FB1",
+    "path": null,
+    "project_path": null,
+    "type": "r_dataframe",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1600614983317.0,
+    "source_on_save": false,
+    "relative_order": 6,
+    "properties": {
+        "cacheKey": "7559CBE0",
+        "caption": "bymap_df",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=bymap_df&cache_key=7559CBE0",
+        "displayedObservations": 1,
+        "environment": "",
+        "object": "bymap_df",
+        "preview": 0,
+        "totalObservations": 1,
+        "variables": 7
+    },
+    "folds": "",
+    "lastKnownWriteTime": 3180141808686473843,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1600614983317,
+    "read_only": false,
+    "read_only_alternatives": []
+}
