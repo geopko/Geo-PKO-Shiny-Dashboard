@@ -1,23 +1,25 @@
 {
-    "collab_server" : "",
-    "contents" : "",
-    "created" : 1599142900725.000,
-    "dirty" : true,
-    "encoding" : "",
-    "folds" : "",
-    "hash" : "1354093462",
-    "id" : "27BC72C4",
-    "lastKnownWriteTime" : 2318265709965243507,
-    "last_content_update" : 1599159276258,
-    "path" : null,
-    "project_path" : null,
-    "properties" : {
-        "cursorPosition" : "15,0",
-        "scrollLine" : "0",
-        "tempName" : "Untitled1"
+    "id": "27BC72C4",
+    "path": null,
+    "project_path": null,
+    "type": "r_source",
+    "hash": "3317999210",
+    "contents": "",
+    "dirty": true,
+    "created": 1599142900725.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "cursorPosition": "16,21",
+        "scrollLine": "0",
+        "tempName": "Untitled1"
     },
-    "relative_order" : 3,
-    "source_on_save" : false,
-    "source_window" : "",
-    "type" : "r_source"
+    "folds": "",
+    "lastKnownWriteTime": 2318265709965243507,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1600608675356,
+    "read_only": false,
+    "read_only_alternatives": []
 }

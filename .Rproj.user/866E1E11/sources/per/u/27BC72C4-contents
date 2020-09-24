@@ -20,7 +20,6 @@ anim_df <- reactive({
 }) 
 
 
-
 output$animated <- renderImage({
   outfile <- tempfile(fileext= '.gif')
   

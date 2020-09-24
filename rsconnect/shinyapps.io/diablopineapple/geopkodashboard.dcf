@@ -5,9 +5,9 @@ account: diablopineapple
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2605081
-bundleId: 3590522
+bundleId: 3662219
 url: https://nguyentha.shinyapps.io/geopkodashboard/
-when: 1599168365.83711
+when: 1600873936.23047
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|CAF_adm1.sf.rds|CIV_adm1.sf.rds|DZA_adm1.sf.rds|ERI_adm1.sf.rds|ESH_adm1.sf.rds|ETH_adm1.sf.rds|geopko.csv|geopko_ccode.csv|IRQ_adm1.sf.rds|KWT_adm1.sf.rds|LBR_adm1.sf.rds|MLI_adm1.sf.rds|MRT_adm1.sf.rds|SDN_adm1.sf.rds|ShinyTwotabs.R|SLE_adm1.sf.rds|TCD_adm1.sf.rds|testscript.R
+ignoredFiles: .RData|about.html|BDI_adm1.sf.rds|CAF_adm1.sf.rds|CIV_adm1.sf.rds|COD_adm1.sf.rds|DZA_adm1.sf.rds|GTM_adm1.sf.rds|HTI_adm1.sf.rds|MLI_adm1.sf.rds|RWA_adm1.sf.rds|SDN_adm1.sf.rds|ShinyTwotabs.R|SLE_adm1.sf.rds|SSD_adm1.sf.rds|style.css|testscript.R|UGA_adm1.sf.rds|using-the-dataset-2.html|using-the-dataset.html

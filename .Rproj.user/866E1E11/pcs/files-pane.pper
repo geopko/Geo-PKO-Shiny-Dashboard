@@ -1,9 +1,9 @@
 {
-    "path" : "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard",
-    "sortOrder" : [
+    "path": "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard",
+    "sortOrder": [
         {
-            "ascending" : true,
-            "columnIndex" : 2
+            "ascending": true,
+            "columnIndex": 2
         }
     ]
 }
