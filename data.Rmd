@@ -1,0 +1,22 @@
+## The Geocoded UN Peacekeeping Operations (Geo-PKO) Dataset
+The Geo-PKO dataset provides data on UN peacekeeping deployments. It offers information on key attributes of peacekeeping deployments at the local level, including location, troop size, troop type, headquarters, troop-contributing countries and other variables. The dataset is current as at August 2020, and will be updated in December 2020. 
+  
+### Download the data
+[Download v2.0 of the Geo-PKO dataset here.](http://)  
+  
+**When using the data (including this website), please cite:**  
+Cil, D., Fjelde, H., Hultman, L., & Nilsson, D. (2020). Mapping blue helmets: Introducing the Geocoded Peacekeeping Operations (Geo-PKO) dataset. Journal of Peace Research, 57(2), 360–370.  
+  
+Data has been coded in accordance with digitally published United Nations peacekeeping deployment maps, and some limitations may be found. Troop numbers are based on units identified in each map, in line with standard UN and NATO military unit sizes. The dataset is current as at August 2020, and will be updated in December 2020.
+  
+<img src='https://github.com/hatnguyen267/Geo-PKO-Shiny-v2.0/blob/master/map1.png', width=50%, alt='A United Nations deployment map for UNISFA in August 2018.'/>
+    
+<img src='https://github.com/hatnguyen267/Geo-PKO-Shiny-v2.0/blob/master/map2.png', width=45%, alt='UNPROFOR, February 1993.'/>
+  
+### Work with the data
+Since the unit of analysis is deployment location per map, the data structure may be challenging to work with. Our GitHub documentation provides a guide to working with Geo-PKO data in RStudio. Through this, you can conduct your own analyses and produce your own visualisations. 
+  
+[Explore our documentation on working with Geo-PKO data here.](http://)
+
+
+
