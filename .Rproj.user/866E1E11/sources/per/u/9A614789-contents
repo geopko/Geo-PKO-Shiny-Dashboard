@@ -14,6 +14,7 @@ bymap_df <-
     arrange(desc(Year))
 
 map_df %>% tibble::rowid_to_column("ID") %>% 
+  filter(Mission=="UNAVEM II") %>% 
   select(ID, Location, No.troops, RPF:UAV, Other.Type, -RPF_No,
          -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
   pivot_longer(4:22, names_to="trooptypes", values_to="binary") %>% 

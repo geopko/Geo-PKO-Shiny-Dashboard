@@ -34,7 +34,7 @@ if(!require(gganimate)) install.packages("gganimate")
 if(!require(scales)) install.packages("scales")
 if(!require(ggnewscale)) install.packages("ggnewscale")
 if(!require(shinycssloaders)) install.packages("shinycssloaders")
-
+if(!require(purrr)) install.packages("purrr")
 if(!require(foreign)) install.packages("foreign", repos = "https://svn.r-project.org/")
 
 options(shiny.usecairo=TRUE)
@@ -102,8 +102,8 @@ ui <- fluidPage(
                                                             choices=factor(geopko$Mission), width=150),
                                                 selectInput("timepoint_map", 
                                                             "Choose year and month", choices=NULL),
-                                                checkboxInput(inputId="depsize_map", 
-                                                              "Deployment size", value=TRUE),
+                                                # checkboxInput(inputId="depsize_map", 
+                                                #               "Deployment size", value=TRUE),
                                                 checkboxInput(inputId="MHQ_map", 
                                                               "Mission HQ", value=FALSE),
                                                 checkboxInput(inputId="SHQ_map", 
@@ -303,97 +303,137 @@ server <- function(input, output, session){
     maplist <- pull(sfdf(), a3)
     mapshapefiles <- gadm_sf_loadCountries(c(paste(maplist)), level=1)
     
-    p <- ggplot() + geom_sf(data=mapshapefiles$sf) + 
+    p <- ggplot() + geom_sf(data=mapshapefiles$sf, fill="grey80") + 
       theme_void() + 
       labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
            caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
-      geom_blank()
+      geom_blank()+
+      geom_point(data=map_df_temp(), 
+                 aes(x=Longitude, y=Latitude, shape="Blank", color="Blank"),
+                 size=2, stroke=0.7, fill="grey44")+
+      scale_shape_manual(values=c("Blank"=22),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      scale_color_manual(values=c("Blank"="grey44"),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      new_scale_color()+
+      new_scale("shape")+
+      geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0),
+                 aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+                 shape=20, alpha = 0.8)+
+      scale_size_binned(name="Size of deployment",range=c(2, 16))+
+      {if(max(map_df_temp()$No.TCC)<=4)list(
+        scale_color_continuous(low = "thistle3", high = "darkred",
+                               guide="colorbar", name="No. of Troop-\nContributing Countries",
+                               breaks=c(1,2,3,4),
+                               limits=c(1,4)))
+      } +
+      {if(max(map_df_temp()$No.TCC)>4)list(
+        scale_color_continuous(low = "thistle3", high = "darkred",
+                               guide="colorbar", name="No. of Troop-\nContributing Countries",
+                               breaks=pretty_breaks())
+      )}+
+      new_scale_color()+
+      scale_shape_manual(values=c("SHQ"=3,
+                                  "UNMO"=24,
+                                  "UNPOL"=23),
+                         labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+                         name="")+
+      scale_color_manual(values=c("SHQ"="orange",
+                                  "UNMO"="darkblue",
+                                  "UNPOL"="darkgreen"),
+                         labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+                         name="")
+       
+      # 
     
-    if(input$depsize_map){
-      if(nrow(map_zero()) >0){
-        p <- p + 
-          geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0), 
-                     aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
-                     shape=20, alpha = 0.8)+
-          scale_size_binned(name="Size of deployment",range=c(2, 16))+
-          {if(max(map_df_temp()$No.TCC)<=4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", 
-                                   guide="colorbar", name="Number of TCCs",
-                                   breaks=c(1,2,3,4),
-                                   limits=c(1,4)))}+
-          {if(max(map_df_temp()$No.TCC)>4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", 
-                                   guide="colorbar", name="Number of TCCs",
-                                   breaks=pretty_breaks()))}+
-          new_scale_color()+
-          
-          geom_point(data=map_df_temp() %>% filter(No.troops==0, No.TCC==0), 
-                     aes(x=Longitude, y=Latitude, shape="Blank", color="Blank"), 
-                     size=2, stroke=0.5)+
-          scale_shape_manual(values=c("Blank"=22),
-                             labels=c("Blank"="Locations with no troops recorded"),
-                             name="")+
-          
-          scale_color_manual(values=c("Blank"="grey44"),
-                             labels=c("Blank"="Locations with no troops recorded"),
-                             name="")+
-          # guides(shape=guide_legend(title="", order=3), color=guide_legend(title="", order=3))+
-          new_scale_color()+
-          new_scale("shape")+
-          scale_shape_manual(values=c("SHQ"=3,
-                                      "UNMO"=24,
-                                      "UNPOL"=23),
-                             labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-                             name="Non-combat functions")+
-          scale_color_manual(values=c("SHQ"="orange",
-                                      "UNMO"="darkblue",
-                                      "UNPOL"="darkgreen"),
-                             labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-                             name="Non-combat functions")
-      }
-      else{
-        p <- p + geom_point(data=map_df_temp(), 
-                            aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
-                            shape=20, alpha = 0.8)+
-          scale_size_binned(name="Size of deployment",range=c(2, 16))+
-          #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
-          {if(max(map_df_temp()$No.TCC)<=4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", 
-                                   guide="colorbar", name="Number of TCCs",
-                                   breaks=c(1,2,3,4),
-                                   limits=c(1,4)))}+
-          {if(max(map_df_temp()$No.TCC)>4)list(
-            scale_color_continuous(low = "thistle3", high = "darkred", 
-                                   guide="colorbar", name="Number of TCCs",
-                                   breaks=pretty_breaks()))}+
-          new_scale_color()+
-          scale_shape_manual(values=c("SHQ"=3,
-                                      "UNMO"=24,
-                                      "UNPOL"=23),
-                             labels=c("SHQ"="Sector HQ", 
-                                      "UNMO"="Military Observers", 
-                                      "UNPOL"="UN Police"),
-                             name="Non-combat functions")+
-          scale_color_manual(values=c("SHQ"="orange",
-                                      "UNMO"="darkblue",
-                                      "UNPOL"="darkgreen"),
-                             labels=c("SHQ"="Sector HQ", 
-                                      "UNMO"="Military Observers", 
-                                      "UNPOL"="UN Police"),
-                             name="Non-combat functions")
-      }
-    }
+    # if(input$depsize_map){
+    #   if(nrow(map_zero()) >0){
+    #     p <- p + 
+    #       geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0), 
+    #                  aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+    #                  shape=20, alpha = 0.8)+
+    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
+    #       {if(max(map_df_temp()$No.TCC)<=4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=c(1,2,3,4),
+    #                                limits=c(1,4)))}+
+    #       {if(max(map_df_temp()$No.TCC)>4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=pretty_breaks()))}+
+    #       new_scale_color()+
+    #       
+    #       geom_point(data=map_df_temp() %>% filter(No.troops==0, No.TCC==0), 
+    #                  aes(x=Longitude, y=Latitude, shape="Blank", color="Blank"), 
+    #                  size=2, stroke=0.5)+
+    #       scale_shape_manual(values=c("Blank"=22),
+    #                          labels=c("Blank"="Locations with no troops recorded"),
+    #                          name="")+
+    #       
+    #       scale_color_manual(values=c("Blank"="grey44"),
+    #                          labels=c("Blank"="Locations with no troops recorded"),
+    #                          name="")+
+    #       # guides(shape=guide_legend(title="", order=3), color=guide_legend(title="", order=3))+
+    #       new_scale_color()+
+    #       new_scale("shape")+
+    #       scale_shape_manual(values=c("SHQ"=3,
+    #                                   "UNMO"=24,
+    #                                   "UNPOL"=23),
+    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")+
+    #       scale_color_manual(values=c("SHQ"="orange",
+    #                                   "UNMO"="darkblue",
+    #                                   "UNPOL"="darkgreen"),
+    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")
+    #   }
+    #   else{
+    #     p <- p + geom_point(data=map_df_temp(), 
+    #                         aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+    #                         shape=20, alpha = 0.8)+
+    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
+    #       #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
+    #       {if(max(map_df_temp()$No.TCC)<=4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=c(1,2,3,4),
+    #                                limits=c(1,4)))}+
+    #       {if(max(map_df_temp()$No.TCC)>4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=pretty_breaks()))}+
+    #       new_scale_color()+
+    #       scale_shape_manual(values=c("SHQ"=3,
+    #                                   "UNMO"=24,
+    #                                   "UNPOL"=23),
+    #                          labels=c("SHQ"="Sector HQ", 
+    #                                   "UNMO"="Military Observers", 
+    #                                   "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")+
+    #       scale_color_manual(values=c("SHQ"="orange",
+    #                                   "UNMO"="darkblue",
+    #                                   "UNPOL"="darkgreen"),
+    #                          labels=c("SHQ"="Sector HQ", 
+    #                                   "UNMO"="Military Observers", 
+    #                                   "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")
+    #   }
+    # # }
     if(input$MHQ_map){
-      p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==3) %>% slice(1), 
+      p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==3) %>% slice(1),
                            aes(x=Longitude, y=Latitude, shape="HQ"),
                            shape=4, color="red", size=6)+
-        geom_label_repel(data=map_df_temp() %>% filter(HQ==3), 
+        geom_label_repel(data=map_df_temp() %>% filter(HQ==3),
                          aes(x=Longitude, y=Latitude, label=paste0("Mission HQ: ",Location)
                          ),
                          box.padding = 2,
-                         size = 3, 
+                         size = 3,
                          fill = alpha(c("white"),0.7))
-    } 
+    }
+    
     if(input$SHQ_map){
       if(length(SHQ_df_temp()$Location)>1){
         p <- p +  geom_point(data=map_df_temp() %>% filter(HQ==2), 
@@ -401,6 +441,7 @@ server <- function(input, output, session){
       else{
         p <- p + labs(subtitle="Sector HQs not available. Please deselect the option.")}  
     }
+    
     if(input$MO_map){
       if(length(UNMO_df_temp()$Location)>1){
         p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO.dummy==1), 
@@ -423,33 +464,6 @@ server <- function(input, output, session){
     }
     
     p <- p +
-      # scale_shape_manual(values=c("SHQ"=3,
-      #                             "UNMO"=24,
-      #                             "UNPOL"=23),
-      #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-      #                    name="Non-combat functions")+
-      # scale_color_manual(values=c("SHQ"="orange",
-      #                             "UNMO"="darkblue",
-      #                             "UNPOL"="darkgreen"),
-      #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-      #                    name="Non-combat functions")+
-      # scale_shape_manual(values=c("SHQ"=3,
-    #                             "UNMO"=24,
-    #                             "UNPOL"=23,
-    #                             "Blank"=22),
-    #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police",
-    #                             "Blank"="Locations with no deployment recorded*"),
-    #                    name="Non-combat functions",
-    #                    guide = guide_legend(title = NULL))+
-    # scale_color_manual(values=c("SHQ"="orange",
-    #                             "UNMO"="darkblue",
-    #                             "UNPOL"="darkgreen",
-    #                             "Blank"="grey40"),
-    #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police",
-    #                             "Blank"="Locations with no deployment recorded*"),
-    #                    name="Non-combat functions",
-    #                    guide = guide_legend(title = NULL))+
-    # guides(color=guide_legend("Non-combat functions"), shape=guide_legend("Non-combat functions"))+
     theme(plot.subtitle = element_text(color="red"),
           plot.title=element_text(face="bold", hjust=0),
           #      plot.caption.position = "plot",
@@ -460,11 +474,22 @@ server <- function(input, output, session){
     
     print(p)
     
-  }, height=500) 
+  }, height=600) 
   
   ####map_df_detail####
   
+  typecheck_df <- reactive({
+    map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
+      select(ID, Location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
+             -Inf_No, -FPU_No, -RES_No, -FP_No) %>%
+      mutate_at(vars(RPF:Other.Type), as.numeric) %>% 
+      rowwise(ID) %>% 
+      mutate(typecheck_var=sum(c_across(RPF:Other.Type))) %>% 
+      filter(typecheck_var >0)
+  })
+  
   static_map_details <- reactive({
+    if(length(typecheck_df()>0)){
     map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
       select(ID, Location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
              -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
@@ -474,7 +499,12 @@ server <- function(input, output, session){
       mutate(trooptypes=ifelse(trooptypes=="Other.Type", "Others", trooptypes)) %>% 
       group_by(ID, Location, No.troops, No.TCC) %>% 
       summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% ungroup() %>% 
-      select(-ID) 
+      select(-ID)}
+    else {
+      map_df_temp() %>% 
+        select(Location, No.troops, No.TCC) %>% 
+        mutate(Troop.type="Data on troop types not available for this location")
+    }
   })
   
   output$map_df_details <- renderDataTable({
@@ -491,7 +521,7 @@ server <- function(input, output, session){
   
   anim_df <- reactive({
     req(input$anim_map)
-    map_df %>% filter(Mission %in% input$anim_map) %>% arrange(joined_date)
+    map_df %>% filter(Mission %in% input$anim_map) %>% arrange(timepoint)
   }) 
   
   
@@ -508,17 +538,33 @@ server <- function(input, output, session){
     anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
       theme_void() + 
       geom_point(data=anim_df(), aes(x=Longitude, y=Latitude, size=No.troops, 
-                                     color=as.factor(No.TCC), group=joined_date),
+                                     color=as.integer(No.TCC), group=timepoint),
                  shape=20, alpha = 0.5)+
-      scale_size_continuous(name="Size of deployment",range=c(2, 20))+
-      guides(color=guide_legend(ncol=2, override.aes = list(size=2)))+
-      scale_color_discrete(name="Number of TCCs")+
-      transition_states(states=anim_df()$joined_date)+
+      scale_size_binned(name="Size of deployment",range=c(2, 16))+
+      {if(max(anim_df()$No.TCC)<=4)list(
+        scale_color_continuous(low = "thistle3", high = "darkred",
+                               guide="colorbar", name="No. of Troop-\nContributing Countries",
+                               breaks=c(1,2,3,4),
+                               limits=c(1,4)))
+      } +
+      {if(max(anim_df()$No.TCC)>4)list(
+        scale_color_continuous(low = "thistle3", high = "darkred",
+                               guide="colorbar", name="No. of Troop-\nContributing Countries",
+                               breaks=pretty_breaks())
+      )}+
+      theme(plot.subtitle = element_text(color="red"),
+            plot.title=element_text(face="bold", hjust=0),
+            #      plot.caption.position = "plot",
+            plot.caption = element_text(hjust=1),
+            legend.direction = "vertical",
+            legend.box="horizontal",
+            legend.position = "right")+
+      transition_states(states=anim_df()$timepoint)+
       labs(title=paste0(mission_name,": ", "{closest_state}"),
            caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
       ease_aes('linear')
     
-    anim_save("outfile.gif", animate(anim_p, fps = 4, width=650, height=400, res=100))
+    anim_save("outfile.gif", animate(anim_p, fps = 4, width=650, height=500, res=120))
     
     list(src="outfile.gif",
          contentType='image/gif'
