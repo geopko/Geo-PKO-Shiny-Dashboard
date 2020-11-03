@@ -164,7 +164,7 @@ TCC_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addTiles()  %>% 
   hideGroup("Mission HQ")%>%
   fitBounds(~-70,-50,~60,60) %>%
-  addLegend(pal = qpal2, values = ~gif_df2$No.TCC, group = "TCC", title= "Legend") %>%
+  addLegend(pal = qpal2, values = ~gif_df2$No.TCC, group = "TCC", title= "Number of TCCs") %>%
   addCircleMarkers(data= (gif_df23<-gif_df2%>%filter(Year==2020)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~qpal2(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
@@ -180,7 +180,7 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
     options = layersControlOptions(collapsed = FALSE)) %>% 
   hideGroup(c("Medical","Aviation", "Engineering", "Transport", "Signals","Maintenance","Riverine"))%>%
   fitBounds(~-70,-50,~60,60) %>%
-  addLegend(pal = qpal3, values = ~gif_df3$Infantry, group = "Infantry", title= "Legend") %>%
+  addLegend(pal = qpal3, values = ~gif_df3$Infantry, group = "Infantry", title= "Number of troops") %>%
   addCircleMarkers(data=(gif_df31<-gif_df3%>%filter(Year==2020)%>%filter(Infantry>1)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                    fillOpacity = 0.6, color = ~qpal3(Infantry), group = "Infantry", 
                    label = paste("<strong>Location:</strong>",gif_df31$Location)%>% lapply(htmltools::HTML))%>%
@@ -304,7 +304,7 @@ server <- function(input, output, session){
         options = layersControlOptions(collapsed = FALSE)) %>% 
       hideGroup(c("UNPOL", "UNMO", "Mission HQs"))  %>%
       fitBounds(~-70,-50,~60,60) %>%
-      addLegend(pal = qpal, values = ~gif_df$ave.no.troops, group = "Troop deployment", title= "Legend")
+      addLegend(pal = qpal, values = ~gif_df$ave.no.troops, group = "Troop deployment", title= "Number of troops")
   })
   
   
