@@ -13,13 +13,21 @@ bymap_df <-
     summarise(details=str_c(overview, collapse=", ")) %>% 
     arrange(desc(Year))
 
-map_df %>% tibble::rowid_to_column("ID") %>% 
-  filter(Mission=="UNAVEM II") %>% 
-  select(ID, Location, No.troops, RPF:UAV, Other.Type, -RPF_No,
+map_df %>%  tibble::rowid_to_column("ID") %>% 
+  select(ID, Location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF, -RPF_No,
          -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
-  pivot_longer(4:22, names_to="trooptypes", values_to="binary") %>% 
+  mutate(across(everything(), as.character)) %>% 
+  pivot_longer(5:23, names_to="trooptypes", values_to="binary") %>% 
   filter(binary==1) %>% 
   mutate(trooptypes=ifelse(trooptypes=="Other.Type", "Others", trooptypes)) %>% 
-  group_by(ID, Location, No.troops) %>% 
-  summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% 
+  group_by(ID, Location, No.troops, No.TCC) %>% 
+  summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% ungroup() %>% 
   select(-ID) -> test
+
+map_df %>% tibble::rowid_to_column("ID") %>% 
+  filter(Source=="Map no. 4349") %>% 
+  select(ID, Location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
+         -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
+  mutate_at(vars(`Inf`:`Other.Type`), as.numeric) %>% 
+  rowwise(ID) %>% 
+  mutate(typecheck_var=sum(c_across(`Inf`:`Other.Type`)))  -> test2

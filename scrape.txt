@@ -1,0 +1,189 @@
+  output$depmap <- renderPlot({
+    
+#    input$depsize_map
+    # input$MHQ_map
+    # input$SHQ_map
+    # input$MO_map
+    # input$UNPOL_map
+    
+    p <- ggplot() + geom_sf(data=mapshapefiles()$sf, fill="grey80") + 
+      theme_void() + 
+      labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
+           caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
+      geom_blank()+
+      geom_point(data=map_df_temp(), 
+                 aes(x=Longitude, y=Latitude, shape="Blank", color="Blank"),
+                 size=2, stroke=0.7, fill="grey44")+
+      scale_shape_manual(values=c("Blank"=22),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      scale_color_manual(values=c("Blank"="grey44"),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      new_scale_color()+
+      new_scale("shape")+
+      geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0),
+                 aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+                 shape=20, alpha = 0.8)+
+      scale_size_binned(name="Size of deployment",range=c(2, 16))
+    
+      # {if (max(max_no_tcc()$No.TCC) <=4)(
+      #   scale_color_continuous(low = "thistle3", high = "darkred",
+      #                          guide="colorbar", name="No. of Troop-\nContributing Countries",
+      #                          breaks=c(1,2,3,4),
+      #                          limits=c(1,4)))
+      # } +
+      # {if (max(max_no_tcc()$No.TCC) >4)(
+      #   scale_color_continuous(low = "thistle3", high = "darkred",
+      #                          guide="colorbar", name="No. of Troop-\nContributing Countries",
+      #                          breaks=pretty_breaks())
+      # )}+
+      # new_scale_color()+
+      # scale_shape_manual(values=c("SHQ"=3,
+      #                             "UNMO"=24,
+      #                             "UNPOL"=23),
+      #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+      #                    name="")+
+      # scale_color_manual(values=c("SHQ"="orange",
+      #                             "UNMO"="darkblue",
+      #                             "UNPOL"="darkgreen"),
+      #                    labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+      #                    name="")
+
+    
+    # 
+    
+    # if(input$depsize_map){
+    #   if(nrow(map_zero()) >0){
+    #     p <- p + 
+    #       geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0), 
+    #                  aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+    #                  shape=20, alpha = 0.8)+
+    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
+    #       {if(max(map_df_temp()$No.TCC)<=4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=c(1,2,3,4),
+    #                                limits=c(1,4)))}+
+    #       {if(max(map_df_temp()$No.TCC)>4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=pretty_breaks()))}+
+    #       new_scale_color()+
+    #       
+    #       geom_point(data=map_df_temp() %>% filter(No.troops==0, No.TCC==0), 
+    #                  aes(x=Longitude, y=Latitude, shape="Blank", color="Blank"), 
+    #                  size=2, stroke=0.5)+
+    #       scale_shape_manual(values=c("Blank"=22),
+    #                          labels=c("Blank"="Locations with no troops recorded"),
+    #                          name="")+
+    #       
+    #       scale_color_manual(values=c("Blank"="grey44"),
+    #                          labels=c("Blank"="Locations with no troops recorded"),
+    #                          name="")+
+    #       # guides(shape=guide_legend(title="", order=3), color=guide_legend(title="", order=3))+
+    #       new_scale_color()+
+    #       new_scale("shape")+
+    #       scale_shape_manual(values=c("SHQ"=3,
+    #                                   "UNMO"=24,
+    #                                   "UNPOL"=23),
+    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")+
+    #       scale_color_manual(values=c("SHQ"="orange",
+    #                                   "UNMO"="darkblue",
+    #                                   "UNPOL"="darkgreen"),
+    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")
+    #   }
+    #   else{
+    #     p <- p + geom_point(data=map_df_temp(), 
+    #                         aes(x=Longitude, y=Latitude, size=No.troops, color=as.integer(No.TCC)),
+    #                         shape=20, alpha = 0.8)+
+    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
+    #       #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
+    #       {if(max(map_df_temp()$No.TCC)<=4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=c(1,2,3,4),
+    #                                limits=c(1,4)))}+
+    #       {if(max(map_df_temp()$No.TCC)>4)list(
+    #         scale_color_continuous(low = "thistle3", high = "darkred", 
+    #                                guide="colorbar", name="Number of TCCs",
+    #                                breaks=pretty_breaks()))}+
+    #       new_scale_color()+
+    #       scale_shape_manual(values=c("SHQ"=3,
+    #                                   "UNMO"=24,
+    #                                   "UNPOL"=23),
+    #                          labels=c("SHQ"="Sector HQ", 
+    #                                   "UNMO"="Military Observers", 
+    #                                   "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")+
+    #       scale_color_manual(values=c("SHQ"="orange",
+    #                                   "UNMO"="darkblue",
+    #                                   "UNPOL"="darkgreen"),
+    #                          labels=c("SHQ"="Sector HQ", 
+    #                                   "UNMO"="Military Observers", 
+    #                                   "UNPOL"="UN Police"),
+    #                          name="Non-combat functions")
+    #   }
+    # # }
+    
+    # isolate({
+    # if(input$MHQ_map){
+    #   if(length(MHQ_df_temp()$Location)>0){
+    #   p <- p +  geom_point(data=MHQ_df_temp(),
+    #                        aes(x=Longitude, y=Latitude, shape="HQ"),
+    #                        shape=4, color="red", size=6)+
+    #     geom_label_repel(data=MHQ_df_temp(),
+    #                      aes(x=Longitude, y=Latitude, label=paste0("Mission HQ: ",Location)
+    #                      ),
+    #                      box.padding = 2,
+    #                      size = 3,
+    #                      fill = alpha(c("white"),0.7))}
+    #   else{
+    #     p <- p + labs(subtitle="Mission HQs not available for this time period. Please deselect the option.")}
+    # }
+    # 
+    # if(input$SHQ_map){
+    #   if(length(SHQ_df_temp()$Location)>0){
+    #     p <- p +  geom_point(data=map_df_temp() %>% filter(HQ=="2"),
+    #                          aes(x=Longitude, y= Latitude, shape="SHQ", color="SHQ"), size=5)}
+    #   else{
+    #     p <- p + labs(subtitle="Sector HQs not available for this time period. Please deselect the option.")}
+    # }
+    # 
+    # if(input$MO_map){
+    #   if(length(UNMO_df_temp()$Location)>0){
+    #     p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO.dummy==1),
+    #                          aes(x=Longitude, y= Latitude, shape="UNMO", color="UNMO"),
+    #                          #color="darkblue",
+    #                          position=position_jitter(),
+    #                          size=3)}
+    #   else{
+    #     p <- p + labs(subtitle="UNMO not found. Please deselect the option.")}
+    # }
+    # 
+    # if(input$UNPOL_map){
+    #   if(length(UNPOL_df_temp()$Location)>0){
+    #     p <- p +  geom_point(data=map_df_temp() %>% filter(UNPOL.dummy==1),
+    #                          aes(x=Longitude, y= Latitude, shape="UNPOL", color="UNPOL"),
+    #                          position=position_jitter(),
+    #                          size=4)}
+    #   else{
+    #     p <- p + labs(subtitle="UNPOL not found. Please deselect the option.")}
+    # }
+    # 
+    # # })
+    # # 
+    # p <- p +
+    #   theme(plot.subtitle = element_text(color="red"),
+    #         plot.title=element_text(face="bold", hjust=0),
+    #         #      plot.caption.position = "plot",
+    #         plot.caption = element_text(hjust=1),
+    #         legend.direction = "horizontal", 
+    #         legend.position = "bottom", 
+    #         legend.box = "vertical")
+    
+    print(p)
+    
+  }, height=600) 

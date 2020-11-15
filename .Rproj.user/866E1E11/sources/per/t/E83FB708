@@ -12,13 +12,13 @@
     "properties": {
         "expression": "test",
         "caption": "test",
-        "totalObservations": "0",
-        "displayedObservations": "0",
+        "totalObservations": "1216",
+        "displayedObservations": "1216",
         "variables": "4",
-        "cacheKey": "154D09C6",
+        "cacheKey": "4D1D729B",
         "object": "test",
         "environment": "",
-        "contentUrl": "grid_resource/gridviewer.html?env=&obj=test&cache_key=154D09C6&max_cols=50",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=test&cache_key=4D1D729B&max_cols=50",
         "preview": "0"
     },
     "folds": "",

@@ -10,15 +10,16 @@
     "source_on_save": false,
     "relative_order": 7,
     "properties": {
-        "cacheKey": "7DD46AA3",
+        "cacheKey": "3912B3C2",
         "caption": "cclist3",
-        "contentUrl": "grid_resource/gridviewer.html?env=&obj=cclist3&cache_key=7DD46AA3",
-        "displayedObservations": 81,
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=cclist3&cache_key=3912B3C2&max_cols=50",
+        "displayedObservations": "81",
         "environment": "",
         "object": "cclist3",
-        "preview": 0,
-        "totalObservations": 81,
-        "variables": 2
+        "preview": "0",
+        "totalObservations": "81",
+        "variables": "2",
+        "expression": "cclist3"
     },
     "folds": "",
     "lastKnownWriteTime": 5292976843906638626,
