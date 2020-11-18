@@ -150,26 +150,31 @@ ui <- fluidPage(
                                                 p(""),
                                                 selectInput(inputId="anim_map", label="Animated maps show changes over time. Select a mission to visualise.",
                                                             choices=factor(geopko$Mission), width=200),
-                                                helpText("This map maker relies on the package <i>gganimate</i>. Depending on the length of a mission, the rendering process may take some time.")
-                                                
+                                                tags$div("This tool relies on the package",tags$em("gganimate."),"The animation may take time, as rendering entails producing and combining multiple frames.")
+                                   ),
                                                 # sliderInput(inputId="anim_timeslider", 
                                                 #             label= "Select deployment period", 
                                                 #             value= c(x,y), 
                                                 #             min= x,
                                                 #             max= y
                                                 #         )
-                                   ),
+                                   
                                    mainPanel(fluid=TRUE, 
                                              withSpinner(imageOutput("animated")))))),
+             ####TCC Table UI####
              tabPanel("Contributing Countries",
-                      basicPage(
-                        radioButtons(inputId="databy_tcc", 
+                      titlePanel("Troop-contributing Countries"),
+                      sidebarLayout(
+                        sidebarPanel(radioButtons(inputId="databy_tcc", 
                                      label="Present data by:", 
                                      choices=c("Deployment map", "Year"),
                                      selected="Deployment map (default)"),
-                        helpText("The Geo-PKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of troop-contributing countries (TCCs)."),
+                                     ),
+                        helpText("The Geo-PKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of troop-contributing countries (TCCs).")
+                        ),
                         # span(h6(textOutput("tabletext", align="right"))),
-                        DT::dataTableOutput("tcc_table")
+                        mainPanel(fluid=TRUE,
+                                  DT::dataTableOutput("tcc_table")
                       )),
              tabPanel("Missions",
                       sidebarLayout(
