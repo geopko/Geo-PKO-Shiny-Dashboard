@@ -86,6 +86,7 @@ tcc_df <- geopko %>%
 cclist3 <- map_df %>% select(Mission, iso3c) %>% distinct() %>% #creating list of country codes for GADM sf files dowload 
   mutate(iso3c=strsplit(as.character(iso3c), ", ")) %>% 
   unnest(iso3c) %>% distinct()
+
 #names(map_df)[names(map_df) == "Inf"] <- "Infantry"
 
 #oxford comma paste
