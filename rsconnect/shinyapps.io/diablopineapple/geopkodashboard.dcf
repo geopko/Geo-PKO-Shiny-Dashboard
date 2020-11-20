@@ -5,9 +5,9 @@ account: diablopineapple
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2605081
-bundleId: 3665741
+bundleId: 3864017
 url: https://nguyentha.shinyapps.io/geopkodashboard/
-when: 1600947980.75994
+when: 1605473794.75208
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: .RData|about.html|CIV_adm1.sf.rds|MLI_adm1.sf.rds|ShinyTwotabs.R|style.css|testscript.R|using-the-dataset-2.html|using-the-dataset.html
+ignoredFiles: .RData|about.html|CAF_adm1.sf.rds|Geo_PKO_v.2.0.csv|Geo_PKO_v.2.0.xlsx|geopko.csv|geopko_ccode.csv|geopko_ccode2.csv|geopko2.csv|HTI_adm1.sf.rds|scrape.txt|ShinyTwotabs.R|style.css|TCD_adm1.sf.rds|testscript.R|using-the-dataset-2.html|using-the-dataset.html
