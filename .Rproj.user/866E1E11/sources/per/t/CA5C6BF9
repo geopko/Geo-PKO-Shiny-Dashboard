@@ -1,0 +1,32 @@
+{
+    "id": "CA5C6BF9",
+    "path": null,
+    "project_path": null,
+    "type": "r_dataframe",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1605819502591.0,
+    "source_on_save": false,
+    "relative_order": 11,
+    "properties": {
+        "expression": "ISO_df",
+        "caption": "ISO_df",
+        "totalObservations": "288",
+        "displayedObservations": "288",
+        "variables": "2",
+        "cacheKey": "649A7F93",
+        "object": "ISO_df",
+        "environment": "",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=ISO_df&cache_key=649A7F93&max_cols=50",
+        "preview": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 3539893226500879457,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1605819502591,
+    "read_only": false,
+    "read_only_alternatives": []
+}
