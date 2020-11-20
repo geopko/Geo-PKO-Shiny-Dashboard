@@ -44,9 +44,6 @@ geopko <- readr::read_csv("Geo_PKO_v2_ISO3.csv", col_types = cols(.default="c"),
 # if using xlsx
 # geopko <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
-rmdfiles <- c("about.Rmd", "data.Rmd")
-sapply(rmdfiles, knit, quiet=T)
-
 ####leaflet data prep####
 #Basic Data modification
 geopko2 <-geopko2 %>% mutate_at(vars(HeSup, Inf_No, RES_No), as.numeric) %>%
@@ -420,11 +417,10 @@ ui <- fluidPage(
                         )
                       )),
              tabPanel ("Data",tags$div(
-                withMathJax(includeMarkdown("data.md"))
-             ), style='width:1100px'),
+               includeHTML("using-the-dataset-3.html")
+             )),
              tabPanel ("About",tags$div(
-                withMathJax(includeMarkdown("about.md"))
-             ), style='width:1100px'))
+               includeHTML("about2.html")))
   )
 )
 
