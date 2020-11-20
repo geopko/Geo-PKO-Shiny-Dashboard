@@ -23,7 +23,7 @@ if(!require(DT)) install.packages("DT", repos = "http://cran.us.r-project.org")
 if(!require(GADMTools)) install.packages("GADMTools")
 if(!require(Cairo)) install.packages("Cairo")
 if(!require(ggrepel)) install.packages("ggrepel")
-#if(!require(forcats)) install.packages("forcats")
+if(!require(forcats)) install.packages("forcats")
 if(!require(sp)) install.packages("sp")
 if(!require(gifski)) install.packages("gifski")
 if(!require(png)) install.packages("png")
@@ -33,6 +33,8 @@ if(!require(ggnewscale)) install.packages("ggnewscale")
 if(!require(shinycssloaders)) install.packages("shinycssloaders")
 if(!require(purrr)) install.packages("purrr")
 if(!require(foreign)) install.packages("foreign", repos = "https://svn.r-project.org/")
+library(knitr)
+library(htmltools)
 #if(!require(countrycode)) install.packages("countrycode")
 
 options(shiny.usecairo=TRUE)
@@ -41,15 +43,14 @@ options(shiny.usecairo=TRUE)
 
 geopko <- readr::read_csv("Geo_PKO_v2_ISO3.csv", col_types = cols(.default="c"),
                           locale=readr::locale(encoding="latin1"))
-# if using xlsx
-# geopko <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
+#geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
 rmdfiles <- c("about.Rmd", "data.Rmd")
 sapply(rmdfiles, knit, quiet=T)
 
 ####leaflet data prep####
 #Basic Data modification
-geopko2 <-geopko2 %>% mutate_at(vars(HeSup, Inf_No, RES_No), as.numeric) %>%
+geopko2 <-geopko %>% mutate_at(vars(HeSup, Inf_No, RES_No, Avia, HeSup, longitude, latitude), as.numeric) %>%
   mutate(NoTroops = as.numeric(No.troops), 
          UNPOL = as.numeric(UNPOL.dummy),
          UNMO = as.numeric(UNMO.dummy),
@@ -135,10 +136,10 @@ Mainticon <- makeAwesomeIcon(
 )
 #Data frame for first map 
 FrontmapData <- geopko2 %>% 
-  select(Mission, Year, Country, Location, 
-         Latitude, Longitude, Infantry, 
+  select(Mission, year, country, location, 
+         latitude, longitude, Infantry, 
          NoTroops, Reserve, HQ, UNPOL, Med, Av, UNMO) %>%
-  group_by(Mission, Year, Location, Country) %>% 
+  group_by(Mission, year, location, country) %>% 
   mutate(Av = max(Av, na.rm=TRUE), 
          Med = max(Med, na.rm=TRUE),
          Infantry = as.integer(mean(Infantry, na.rm=TRUE)),
@@ -150,25 +151,25 @@ FrontmapData <- geopko2 %>%
 
 
 ###TCC dataframe (second map)
-TCCmapData<-geopko2 %>% select(Source:Location, Latitude, Longitude,
+TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
                                No.TCC:notroopspertcc_17, HQ) %>% 
   pivot_longer(nameoftcc_1:notroopspertcc_17,
                names_to=c(".value", "TCC_id"),
                names_sep="_") %>%
   filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
   mutate_at(vars(notroopspertcc), as.numeric) %>%
-  group_by(Mission, Year, Location, Latitude, Longitude, nameoftcc) %>%
+  group_by(Mission, year, location, latitude, longitude, nameoftcc) %>%
   summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
   mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
          single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
-  add_count(Year, Location, name="No.TCC")%>%
-  group_by(Mission, Year, Location, Latitude, Longitude, No.TCC) %>%
+  add_count(year, location, name="No.TCC")%>%
+  group_by(Mission, year, location, latitude, longitude, No.TCC) %>%
   summarise(year.overview = str_c(single.tcc, collapse=", "))
 
 ##Troop Type Dataframe (third map)
 TTmapData <- geopko2 %>% 
-  select(Source:Location, Latitude, Longitude, Infantry,Eng:MP) %>%
-  group_by(Mission, Year, Location)%>% 
+  select(Source:location, latitude, longitude, Infantry,Eng:MP) %>%
+  group_by(Mission, year, location)%>% 
   mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
   distinct()%>%
   drop_na(Infantry)
@@ -185,10 +186,10 @@ TCC_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addTiles()  %>% 
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTCCmap, values = ~TCCmapData$No.TCC, group = "TCC", title= "Number of TCCs") %>%
-  addCircleMarkers(data= (TCCmapData2020<-TCCmapData%>%filter(Year==2020)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(No.TCC), 
+  addCircleMarkers(data= (TCCmapData2020<-TCCmapData%>%filter(year==2020)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
-                   label = paste("<strong>", TCCmapData2020$Mission,"</strong><br/><strong>Location:</strong>",TCCmapData2020$Location,"<br/><strong>Total number of TCCs:</strong>",TCCmapData2020$No.TCC, "<br/><strong>Countries:</strong>",TCCmapData2020$year.overview)%>% lapply(htmltools::HTML))
+                   label = paste("<strong>", TCCmapData2020$Mission,"</strong><br/><strong>location:</strong>",TCCmapData2020$location,"<br/><strong>Total number of TCCs:</strong>",TCCmapData2020$No.TCC, "<br/><strong>Countries:</strong>",TCCmapData2020$year.overview)%>% lapply(htmltools::HTML))
 
 ####BaseMap third map 
 TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>% 
@@ -201,23 +202,23 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   hideGroup(c("Medical","Aviation", "Engineering", "Transport", "Signals","Maintenance","Riverine"))%>%
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
-  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(Year==2020)%>%filter(Infantry>0)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
+  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2020)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                    fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                   label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$Location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(Year==2020)%>%filter(Med>0)), lat = ~Latitude+0.2, lng = ~Longitude+0.2, icon = Medicon, group = "Medical",
-                    label=paste("<strong>Medical</strong><br/>",TTmapDataMed$Location,"-",TTmapDataMed$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(Year==2020)%>%filter(Eng>0)), lat = ~Latitude, lng = ~Longitude, icon = Engicon, group = "Engineering",
-                    label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$Location,"-",TTmapDataEng$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(Year==2020)%>%filter(Sig>0)), lat = ~Latitude-0.2, lng = ~Longitude-0.2, icon = Sigicon, group = "Signals",
-                    label=paste("<strong>Signal</strong><br/>", TTmapDataSig$Location,"-",TTmapDataSig$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(Year==2020)%>%filter(Avia>0)), lat = ~Latitude+0.4, lng = ~Longitude+0.4, icon = Avicon, group = "Aviation",
-                    label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$Location,"-",TTmapDataAvia$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(Year==2020)%>%filter(Riv>0)), lat = ~Latitude-0.6, lng = ~Longitude-0.6, icon = Rivicon, group = "Riverine",
-                    label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$Location,"-",TTmapDataRiv$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(Year==2020)%>%filter(Maint>0)), lat = ~Latitude-0.4, lng = ~Longitude-0.4, icon = Mainticon, group = "Maintenance",
-                    label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$Location,"-",TTmapDataMaint$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(Year==2020)%>%filter(Trans>0)), lat = ~Latitude+0.6, lng = ~Longitude+0.6, icon = Traicon, group = "Transport",
-                    label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$Location,"-",TTmapDataTrans$Mission)%>% lapply(htmltools::HTML))
+                   label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2020)%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
+                    label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2020)%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
+                    label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2020)%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
+                    label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2020)%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+                    label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2020)%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
+                    label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2020)%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
+                    label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$location,"-",TTmapDataMaint$Mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2020)%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
+                    label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$location,"-",TTmapDataTrans$Mission)%>% lapply(htmltools::HTML))
 
 
 ####data prep deployment maps####
@@ -266,8 +267,8 @@ tcc_df <- geopko %>%
 #                            TRUE ~ as.character(iso3c)),
 #          Month = as.numeric(Month),
 #          MonthName = as.character(month(Month, label = TRUE, abbr = FALSE))) %>% 
-#   unite(joined_date, c("Year","MonthName"), sep=": ", remove=FALSE) %>% 
-#   unite(timepoint, c("Year","MonthName"), sep=" ", remove=FALSE) 
+#   unite(joined_date, c("year","MonthName"), sep=": ", remove=FALSE) %>% 
+#   unite(timepoint, c("year","MonthName"), sep=" ", remove=FALSE) 
 
 ####lollipop data prep####
 
@@ -426,7 +427,7 @@ ui <- fluidPage(
                 withMathJax(includeMarkdown("about.md"))
              ), style='width:1100px'))
   )
-)
+
 
 
 
@@ -440,17 +441,17 @@ server <- function(input, output, session){
   #Front map
   filteredData <- reactive({
     FrontmapData %>%
-      drop_na(ave.no.troops)%>% filter(Mission %in% input$missionsFront & Year %in% input$YearFront)
+      drop_na(ave.no.troops)%>% filter(Mission %in% input$missionsFront & year %in% input$YearFront)
   })
   
   #Troop Contributing Countries map
   filteredDataTCC <- reactive({
-    TCCmapData %>% filter(Mission %in% input$missionsTCC & Year %in% input$YearTCC)
+    TCCmapData %>% filter(Mission %in% input$missionsTCC & year %in% input$YearTCC)
   })
   
   #Troop Type map
   filteredDataTroopType <- reactive({
-    TTmapData %>% filter(Mission %in% input$missionsTT & Year %in% input$YearTT)
+    TTmapData %>% filter(Mission %in% input$missionsTT & year %in% input$YearTT)
   })
   
   #####Front map basis  
@@ -482,10 +483,10 @@ server <- function(input, output, session){
   #Reactive Text for the front page
   #Year
   output$reactive_year <- renderText({
-    paste0("In ",unique(filteredData()$Year), " there were:")
+    paste0("In ",unique(filteredData()$year), " there were:")
   }) 
   output$reactive_year2 <- renderText({
-    paste0("Active missions in ",unique(filteredData()$Year),":")
+    paste0("Active missions in ",unique(filteredData()$year),":")
   }) 
   #Average troop deployment
   output$reactive_troopcount <- renderText({
@@ -514,27 +515,27 @@ server <- function(input, output, session){
     leafletProxy(mapId = "basemap", data = filteredData()) %>%
       clearMarkers() %>%
       clearShapes() %>%
-      addCircleMarkers(data = (filteredDataTroop<-filteredData()%>%filter(ave.no.troops>0)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+      addCircleMarkers(data = (filteredDataTroop<-filteredData()%>%filter(ave.no.troops>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataTroop$Mission,"<br/>Location:</strong>",filteredDataTroop$Location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
-      addCircleMarkers(data = (filteredDataMissionSite<-filteredData()%>%filter(ave.no.troops==0)), lat = ~Latitude, lng = ~Longitude, weight = 0.5, radius = 3, 
+                       label=paste("<strong>", filteredDataTroop$Mission,"<br/>location:</strong>",filteredDataTroop$location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
+      addCircleMarkers(data = (filteredDataMissionSite<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataMissionSite$Mission,"<br/>Location:</strong>",filteredDataMissionSite$Location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-      addCircleMarkers(data = (filteredDataInfantry<-filteredData()%>%filter(Infantry>0)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+                       label=paste("<strong>", filteredDataMissionSite$Mission,"<br/>location:</strong>",filteredDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+      addCircleMarkers(data = (filteredDataInfantry<-filteredData()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
-                       label=paste("<strong>", filteredDataInfantry$Mission,"<br/>Location:</strong>",filteredDataInfantry$Location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
-      addCircleMarkers(data = (filteredDataMissionSiteOnly<-filteredData()%>%filter(ave.no.troops==0)), lat = ~Latitude, lng = ~Longitude, weight = 0.5, radius = 3, 
+                       label=paste("<strong>", filteredDataInfantry$Mission,"<br/>location:</strong>",filteredDataInfantry$location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
+      addCircleMarkers(data = (filteredDataMissionSiteOnly<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
-                       label=paste("<strong>", filteredDataMissionSiteOnly$Mission,"<br/>Location:</strong>",filteredDataMissionSiteOnly$Location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-      addCircleMarkers(data = (filteredDataReserve<-filteredData()%>%filter(Reserve>0)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
+                       label=paste("<strong>", filteredDataMissionSiteOnly$Mission,"<br/>location:</strong>",filteredDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+      addCircleMarkers(data = (filteredDataReserve<-filteredData()%>%filter(Reserve>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
-                       label=paste("<strong>", filteredDataReserve$Mission,"<br/>Location:</strong>",filteredDataReserve$Location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
-      addAwesomeMarkers(data = (filteredDataUNPOL<-filteredData()%>%filter(UNPOL>0)), lat = ~Latitude, lng = ~Longitude,icon=UNPOLicon, group = "UNPOL", 
-                        label=paste("<strong>UNPOL</strong><br/>",filteredDataUNPOL$Location,"-",filteredDataUNPOL$Mission)%>% lapply(htmltools::HTML)) %>%
-      addAwesomeMarkers(data = (filteredDataUNMO<-filteredData()%>%filter(UNMO>0)), lat = ~Latitude, lng = ~Longitude, icon=UNMOicon, group = "UNMO", 
-                        label=paste("<strong>UNMO</strong><br/>",filteredDataUNMO$Location,"-",filteredDataUNMO$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataHQ<-filteredData()%>%filter(HQ==3)), lat = ~Latitude, lng = ~Longitude, icon = HQicon, group = "Mission HQs", 
-                        label=paste("<strong>Mission HQ</strong><br/>",filteredDataHQ$Location,"-",filteredDataHQ$Mission)%>% lapply(htmltools::HTML))
+                       label=paste("<strong>", filteredDataReserve$Mission,"<br/>location:</strong>",filteredDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
+      addAwesomeMarkers(data = (filteredDataUNPOL<-filteredData()%>%filter(UNPOL>0)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
+                        label=paste("<strong>UNPOL</strong><br/>",filteredDataUNPOL$location,"-",filteredDataUNPOL$Mission)%>% lapply(htmltools::HTML)) %>%
+      addAwesomeMarkers(data = (filteredDataUNMO<-filteredData()%>%filter(UNMO>0)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
+                        label=paste("<strong>UNMO</strong><br/>",filteredDataUNMO$location,"-",filteredDataUNMO$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataHQ<-filteredData()%>%filter(HQ==3)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
+                        label=paste("<strong>Mission HQ</strong><br/>",filteredDataHQ$location,"-",filteredDataHQ$Mission)%>% lapply(htmltools::HTML))
   })
   
   
@@ -543,10 +544,10 @@ server <- function(input, output, session){
     leafletProxy(mapId = "map", data = filteredDataTCC()) %>%
       clearMarkers() %>%
       clearShapes() %>%
-      addCircleMarkers(data = filteredDataTCC(), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(No.TCC)*(1.5), 
+      addCircleMarkers(data = filteredDataTCC(), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC)*(1.5), 
                        fillOpacity = 0.6, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                          "width"= "150px", "white-space"="normal")),
-                       label = paste("<strong>", filteredDataTCC()$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTCC()$Location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
+                       label = paste("<strong>", filteredDataTCC()$Mission,"</strong><br/><strong>location:</strong>",filteredDataTCC()$location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
   })
   
   
@@ -555,23 +556,23 @@ server <- function(input, output, session){
     leafletProxy(mapId = "TroopTypeMap", data = filteredDataTroopType()) %>%
       clearMarkers() %>%
       clearShapes() %>%
-      addCircleMarkers(data = (filteredDataTTInfantry<-filteredDataTroopType()%>%filter(Infantry>0)), lat = ~Latitude, lng = ~Longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
+      addCircleMarkers(data = (filteredDataTTInfantry<-filteredDataTroopType()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                       label = paste("<strong>", filteredDataTTInfantry$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTTInfantry$Location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTMed<-filteredDataTroopType()%>%filter(Med>0)), lat = ~Latitude+0.2, lng = ~Longitude+0.2, icon = Medicon, group = "Medical",
-                        label=paste("<strong>Medical</strong><br/>", filteredDataTTMed$Location,"-",filteredDataTTMed$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTEng<-filteredDataTroopType()%>%filter(Eng>0)), lat = ~Latitude, lng = ~Longitude, icon = Engicon, group = "Engineering",
-                        label=paste("<strong>Engineering</strong><br/>", filteredDataTTEng$Location,"-",filteredDataTTEng$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTSig<-filteredDataTroopType()%>%filter(Sig>0)), lat = ~Latitude-0.2, lng = ~Longitude-0.2, icon = Sigicon, group = "Signals",
-                        label=paste("<strong>Signal</strong><br/>", filteredDataTTSig$Location,"-",filteredDataTTSig$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(Avia>0)), lat = ~Latitude+0.4, lng = ~Longitude+0.4, icon = Avicon, group = "Aviation",
-                        label=paste("<strong>Aviation</strong><br/>", filteredDataTTAvia$Location,"-",filteredDataTTAvia$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTRiv<-filteredDataTroopType()%>%filter(Riv>0)), lat = ~Latitude-0.6, lng = ~Longitude-0.6, icon = Rivicon, group = "Riverine",
-                        label=paste("<strong>Riverine</strong><br/>", filteredDataTTRiv$Location,"-",filteredDataTTRiv$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTMaint<-filteredDataTroopType()%>%filter(Maint>0)), lat = ~Latitude-0.4, lng = ~Longitude-0.4, icon = Mainticon, group = "Maintenance",
-                        label=paste("<strong>Maintenance</strong><br/>", filteredDataTTMaint$Location,"-",filteredDataTTMaint$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTTra<-filteredDataTroopType()%>%filter(Trans>0)), lat = ~Latitude+0.6, lng = ~Longitude+0.6, icon = Traicon, group = "Transport",
-                        label=paste("<strong>Transport</strong><br/>", filteredDataTTTra$Location,"-",filteredDataTTTra$Mission)%>% lapply(htmltools::HTML))
+                       label = paste("<strong>", filteredDataTTInfantry$Mission,"</strong><br/><strong>location:</strong>",filteredDataTTInfantry$location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTMed<-filteredDataTroopType()%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
+                        label=paste("<strong>Medical</strong><br/>", filteredDataTTMed$location,"-",filteredDataTTMed$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTEng<-filteredDataTroopType()%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
+                        label=paste("<strong>Engineering</strong><br/>", filteredDataTTEng$location,"-",filteredDataTTEng$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTSig<-filteredDataTroopType()%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
+                        label=paste("<strong>Signal</strong><br/>", filteredDataTTSig$location,"-",filteredDataTTSig$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+                        label=paste("<strong>Aviation</strong><br/>", filteredDataTTAvia$location,"-",filteredDataTTAvia$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTRiv<-filteredDataTroopType()%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
+                        label=paste("<strong>Riverine</strong><br/>", filteredDataTTRiv$location,"-",filteredDataTTRiv$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTMaint<-filteredDataTroopType()%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
+                        label=paste("<strong>Maintenance</strong><br/>", filteredDataTTMaint$location,"-",filteredDataTTMaint$Mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTTra<-filteredDataTroopType()%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
+                        label=paste("<strong>Transport</strong><br/>", filteredDataTTTra$location,"-",filteredDataTTTra$Mission)%>% lapply(htmltools::HTML))
   })
   
   ####TCC tables####
@@ -736,7 +737,7 @@ server <- function(input, output, session){
       geom_blank()+
       geom_point(data=map_df_temp(), 
                  aes(x=longitude, y=latitude, shape="Blank", color="Blank"),
-                 size=2, stroke=0.7, fill="grey44")+
+                 size=2, stroke=0.7, fill="grey60")+
       scale_shape_manual(values=c("Blank"=22),
                          labels=c("Blank"="Mission sites"),
                          name="")+
