@@ -194,7 +194,7 @@ TCC_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
-                   label = paste("<strong>", TCCmapData2019$Mission,"</strong><br/><strong>location:</strong>",TCCmapData2019$location,
+                   label = paste("<strong>", TCCmapData2019$Mission,"</strong><br/><strong>Location:</strong>",TCCmapData2019$location,
                                  "<br/><strong>Total number of TCCs:</strong>",TCCmapData2019$No.TCC, "<br/><strong>Countries:</strong>",
                                  TCCmapData2019$year.overview)%>% lapply(htmltools::HTML))
 
@@ -211,7 +211,7 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
   addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                    fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                   label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
+                   label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
   addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
                     label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$Mission)%>% lapply(htmltools::HTML))%>%
   addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2019)%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
@@ -524,19 +524,19 @@ server <- function(input, output, session){
       clearShapes() %>%
       addCircleMarkers(data = (filteredDataTroop<-filteredData()%>%filter(ave.no.troops>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataTroop$Mission,"<br/>location:</strong>",filteredDataTroop$location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataTroop$Mission,"<br/>Location:</strong>",filteredDataTroop$location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataMissionSite<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataMissionSite$Mission,"<br/>location:</strong>",filteredDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataMissionSite$Mission,"<br/>Location:</strong>",filteredDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataInfantry<-filteredData()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
-                       label=paste("<strong>", filteredDataInfantry$Mission,"<br/>location:</strong>",filteredDataInfantry$location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataInfantry$Mission,"<br/>Location:</strong>",filteredDataInfantry$location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataMissionSiteOnly<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
-                       label=paste("<strong>", filteredDataMissionSiteOnly$Mission,"<br/>location:</strong>",filteredDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataMissionSiteOnly$Mission,"<br/>Location:</strong>",filteredDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataReserve<-filteredData()%>%filter(Reserve>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
-                       label=paste("<strong>", filteredDataReserve$Mission,"<br/>location:</strong>",filteredDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataReserve$Mission,"<br/>Location:</strong>",filteredDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
       addAwesomeMarkers(data = (filteredDataUNPOL<-filteredData()%>%filter(UNPOL>0)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
                         label=paste("<strong>UNPOL</strong><br/>",filteredDataUNPOL$location,"-",filteredDataUNPOL$Mission)%>% lapply(htmltools::HTML)) %>%
       addAwesomeMarkers(data = (filteredDataUNMO<-filteredData()%>%filter(UNMO>0)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
@@ -554,7 +554,7 @@ server <- function(input, output, session){
       addCircleMarkers(data = filteredDataTCC(), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC)*(1.5), 
                        fillOpacity = 0.6, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                          "width"= "150px", "white-space"="normal")),
-                       label = paste("<strong>", filteredDataTCC()$Mission,"</strong><br/><strong>location:</strong>",filteredDataTCC()$location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
+                       label = paste("<strong>", filteredDataTCC()$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTCC()$location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
   })
   
   
@@ -565,7 +565,7 @@ server <- function(input, output, session){
       clearShapes() %>%
       addCircleMarkers(data = (filteredDataTTInfantry<-filteredDataTroopType()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                       label = paste("<strong>", filteredDataTTInfantry$Mission,"</strong><br/><strong>location:</strong>",filteredDataTTInfantry$location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
+                       label = paste("<strong>", filteredDataTTInfantry$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTTInfantry$location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
       addAwesomeMarkers(data = (filteredDataTTMed<-filteredDataTroopType()%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
                         label=paste("<strong>Medical</strong><br/>", filteredDataTTMed$location,"-",filteredDataTTMed$Mission)%>% lapply(htmltools::HTML))%>%
       addAwesomeMarkers(data = (filteredDataTTEng<-filteredDataTroopType()%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
