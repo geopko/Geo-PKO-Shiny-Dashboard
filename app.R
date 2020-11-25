@@ -422,7 +422,8 @@ ui <- fluidPage(
                         sidebarPanel(
                           p("This graph shows the specific time period during which a location had at least one active deployment."),
                           selectInput(inputId="Lollipop_map", label="Select a mission",
-                                      choices=forcats::fct_relevel(factor(Years$Mission)), width=150), width= 3
+                                      choices=forcats::fct_relevel(factor(Years$Mission)), width=150), width= 3,
+                          helpText("The graphs do not show possible temporal interruptions.")
                         ),
                         mainPanel(fluid=TRUE,
                                   plotOutput("lollipop", height="auto")
@@ -1114,7 +1115,7 @@ server <- function(input, output, session){
       ) +
       xlab("Years") +
       ylab("")+ #title already mentions locations, so no need for name
-      labs(title=paste0(lollipop_df()$Mission), # to add (note from T but anyone can do) - , ": ", [mission's earliest year], " - ", [mission's latest year / "-" if ongoing]
+      labs(title=paste0(lollipop_df()$Mission,": ", lollipop_df()$start_date, "-",lollipop_df()$end_date), 
            caption="Data: Geo-PKO v2.0")
     lolli
   }, height=height_lollipop)
