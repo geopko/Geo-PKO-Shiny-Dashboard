@@ -149,7 +149,12 @@ FrontmapData <- geopko2 %>%
          ave.no.troops = as.integer(mean(NoTroops, na.rm=TRUE))) %>% 
   distinct() 
 
-
+####Oxford comma mission text front page
+mission_comma <-function(w, oxford=T) {
+  paste0(paste(w[-length(w)], collapse=", "), 
+         ifelse(oxford,",","")," and ", w[length(w)] )}
+  
+  
 ###TCC dataframe (second map)
 TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
                                No.TCC:notroopspertcc_17, HQ) %>% 
@@ -186,10 +191,12 @@ TCC_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addTiles()  %>% 
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTCCmap, values = ~TCCmapData$No.TCC, group = "TCC", title= "Number of TCCs") %>%
-  addCircleMarkers(data= (TCCmapData2020<-TCCmapData%>%filter(year==2020)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
+  addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
-                   label = paste("<strong>", TCCmapData2020$Mission,"</strong><br/><strong>location:</strong>",TCCmapData2020$location,"<br/><strong>Total number of TCCs:</strong>",TCCmapData2020$No.TCC, "<br/><strong>Countries:</strong>",TCCmapData2020$year.overview)%>% lapply(htmltools::HTML))
+                   label = paste("<strong>", TCCmapData2019$Mission,"</strong><br/><strong>location:</strong>",TCCmapData2019$location,
+                                 "<br/><strong>Total number of TCCs:</strong>",TCCmapData2019$No.TCC, "<br/><strong>Countries:</strong>",
+                                 TCCmapData2019$year.overview)%>% lapply(htmltools::HTML))
 
 ####BaseMap third map 
 TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>% 
@@ -202,22 +209,22 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   hideGroup(c("Medical","Aviation", "Engineering", "Transport", "Signals","Maintenance","Riverine"))%>%
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
-  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2020)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
+  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                    fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
                    label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2020)%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
+  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
                     label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2020)%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
+  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2019)%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
                     label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2020)%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
+  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2019)%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
                     label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2020)%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
                     label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2020)%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
+  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2019)%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
                     label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2020)%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
+  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2019)%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
                     label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$location,"-",TTmapDataMaint$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2020)%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
+  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2019)%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
                     label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$location,"-",TTmapDataTrans$Mission)%>% lapply(htmltools::HTML))
 
 
@@ -231,6 +238,7 @@ map_df <- geopko %>%
 cclist3 <- map_df %>% select(Mission, iso3c) %>% distinct() %>% #creating list of country codes for GADM sf files dowload 
   mutate(iso3c=strsplit(as.character(iso3c), ", ")) %>% 
   unnest(iso3c) %>% distinct()
+
 #oxford comma paste
 country_list <-function(w, oxford=T) {
   if(length(w)==1) return(paste("This mission was active in the following country or territory:",w));
@@ -282,7 +290,7 @@ ui <- fluidPage(
              navbarMenu("Troop Deployments",
                         tabPanel("Overview",tags$style(type = "text/css", "#basemap {height: calc(100vh - 130px) !important;}"), leafletOutput("basemap"),
                                  absolutePanel(top = 70, left = 85, width="20%", height = "78%",style = "padding: 16px; background:rgba(232, 232, 232, 0.8)",
-                                               span(h6("This interactive map shows peacekeeping deployments from 1994-2020, based on publicly available United Nations (UN) peacekeeping deployment maps and mission progress reports. 'Mission Site' indicates where there are no active troop deployments, but the presence of support personnel such as UNPOL (UN Police) and/or UNMO (UN Military Observer).", align = "Left"), style="color:#15110d"),
+                                               span(h6("This interactive map shows peacekeeping deployments from 1994-2019, based on publicly available United Nations (UN) peacekeeping deployment maps and mission progress reports. 'Mission Site' indicates where there are no active troop deployments, but the presence of support personnel such as UNPOL (UN Police) and/or UNMO (UN Military Observer).", align = "Left"), style="color:#15110d"),
                                                br(),
                                                span(h5(tags$b(textOutput("reactive_year"), align = "left"), style="color:#15110d")),
                                                span(h6(textOutput("reactive_troopcount"), align = "left"), style="color:#15110d"),
@@ -296,8 +304,8 @@ ui <- fluidPage(
                                                sliderInput(inputId = "YearFront", 
                                                            label = "Select deployment year",
                                                            min = 1994,
-                                                           max = 2020,
-                                                           value =2020,
+                                                           max = 2019,
+                                                           value =2019,
                                                            step = 1,
                                                            sep= "",
                                                            width = "100%",
@@ -310,8 +318,8 @@ ui <- fluidPage(
                                                              sliderInput(inputId = "YearTCC", 
                                                                          label = "Select year",
                                                                          min = 1994,
-                                                                         max = 2020,
-                                                                         value =2020,
+                                                                         max = 2019,
+                                                                         value =2019,
                                                                          step = 1,
                                                                          sep= "",
                                                                          width = "100%",
@@ -330,8 +338,8 @@ ui <- fluidPage(
                                                             sliderInput(inputId = "YearTT", 
                                                                         label = "Select year",
                                                                         min = 1994,
-                                                                        max = 2020,
-                                                                        value =2020,
+                                                                        max = 2019,
+                                                                        value =2019,
                                                                         step = 1,
                                                                         sep= "",
                                                                         width = "100%",
@@ -502,13 +510,12 @@ server <- function(input, output, session){
   output$reactive_UNMOcount <- renderText({
     paste0(prettyNum(sum(filteredData()$UNMO, na.rm=TRUE), big.mark=","), " UNMO deployments")
   })
-  
+
   #Active missions in given year
   output$reactive_missions <- renderText({
-    paste0((unique(filteredData()$Mission)),",")
+    paste0(mission_comma(unique(filteredData()$Mission)))
   })
-  
-  
+
   
   ###Generate the troop deployment map (front)
   observe({
@@ -1097,7 +1104,7 @@ server <- function(input, output, session){
       geom_point(aes(x=start_date, y=location), 
                  colour=rgb(1.0,0.6,0.1,0.7), size=3) +
       scale_x_continuous(breaks = 
-                           seq(1993,2020,1))+
+                           seq(1993,2019,1))+
       theme_bw() +
       theme(plot.title = element_text(hjust = 0.5),
             legend.position = "none",
