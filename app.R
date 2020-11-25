@@ -300,7 +300,7 @@ ui <- fluidPage(
                                                pickerInput("missionsFront","Select mission(s)", choices=as.character(unique(FrontmapData$Mission)),selected =as.character(unique(FrontmapData$Mission)) , options = list(`actions-box` = TRUE),multiple = T),
                                                chooseSliderSkin("Shiny", color = "transparent"),
                                                setSliderColor("transparent", 1),
-                                               span(h6(textOutput("reactive_year2"),textOutput("reactive_missions"), align = "left"), style="color:#666666"),
+                                               span(h6(textOutput("reactive_yearMissions"), align = "left"), style="color:#666666"),
                                                sliderInput(inputId = "YearFront", 
                                                            label = "Select deployment year",
                                                            min = 1994,
@@ -493,9 +493,7 @@ server <- function(input, output, session){
   output$reactive_year <- renderText({
     paste0("In ",unique(filteredData()$year), " there were:")
   }) 
-  output$reactive_year2 <- renderText({
-    paste0("Active missions in ",unique(filteredData()$year),":")
-  }) 
+
   #Average troop deployment
   output$reactive_troopcount <- renderText({
     paste0(prettyNum(sum(filteredData()$ave.no.troops), big.mark=","), "  peacekeepers deployed")
@@ -512,9 +510,9 @@ server <- function(input, output, session){
   })
 
   #Active missions in given year
-  output$reactive_missions <- renderText({
-    paste0(mission_comma(unique(filteredData()$Mission)))
-  })
+  output$reactive_yearMissions <- renderText({
+    paste0("Active missions in ",unique(filteredData()$year),": ", mission_comma(unique(filteredData()$Mission)))
+  }) 
 
   
   ###Generate the troop deployment map (front)
