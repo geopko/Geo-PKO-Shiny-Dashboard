@@ -262,22 +262,6 @@ tcc_df <- geopko %>%
 #tcc_df <- tcc_df %>% mutate_at(vars(starts_with("notroopsperTCC")), as.character) %>% 
 #  mutate_at(vars(starts_with("nameofTCC")), as.character) %>% 
 
-# ####map data prep####
-# 
-# #appending ISO code to the dataset
-# ISO_df <- codelist %>% select(cown, iso3c) %>% mutate_all(as.character)
-# 
-# map_df <- left_join(geopko, ISO_df, by=c("cow_code"="cown"))
-# 
-# map_df <- map_df %>% 
-#   mutate(iso3c = case_when(country == "Ethiopia/Eritrea" ~ "ETH, ERI",
-#                            country == "Kosovo" ~ "XKO", 
-#                            TRUE ~ as.character(iso3c)),
-#          Month = as.numeric(Month),
-#          MonthName = as.character(month(Month, label = TRUE, abbr = FALSE))) %>% 
-#   unite(joined_date, c("year","MonthName"), sep=": ", remove=FALSE) %>% 
-#   unite(timepoint, c("year","MonthName"), sep=" ", remove=FALSE) 
-
 ####lollipop data prep####
 
 Years <- geopko
@@ -410,11 +394,12 @@ ui <- fluidPage(
                         sidebarPanel(radioButtons(inputId="databy_tcc", 
                                                   label="Present data by:", 
                                                   choices=c("Deployment map", "Year"),
-                                                  selected="Deployment map (default)"),
+                                                  selected="Deployment map"),
                                      helpText("The Geo-PKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of troop-contributing countries (TCCs).")
                         ),
                         # span(h6(textOutput("tabletext", align="right"))),
                         mainPanel(fluid=TRUE,
+                                  helpText("Tip: Use the search box to filter for a specific mission or a troop-contributing country."),
                                   DT::dataTableOutput("tcc_table")
                         ))),
              tabPanel("Missions",
@@ -739,7 +724,7 @@ server <- function(input, output, session){
     p <- ggplot() + geom_sf(data=mapshapefiles$sf, fill="grey80") + 
       theme_void() + 
       labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
-           caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
+           caption="Sources: Geo-PKO v2.0\n")+
       geom_blank()+
       geom_point(data=map_df_temp(), 
                  aes(x=longitude, y=latitude, shape="Blank", color="Blank"),
@@ -823,81 +808,6 @@ server <- function(input, output, session){
                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
                          name="")
     
-    
-    # if(input$depsize_map){
-    #   if(nrow(map_zero()) >0){
-    #     p <- p + 
-    #       geom_point(data=map_df_temp() %>% filter(No.troops>0 | No.TCC>0), 
-    #                  aes(x=longitude, y=latitude, size=No.troops, color=as.integer(No.TCC)),
-    #                  shape=20, alpha = 0.8)+
-    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
-    #       {if(max(map_df_temp()$No.TCC)<=4)list(
-    #         scale_color_continuous(low = "thistle3", high = "darkred", 
-    #                                guide="colorbar", name="Number of TCCs",
-    #                                breaks=c(1,2,3,4),
-    #                                limits=c(1,4)))}+
-    #       {if(max(map_df_temp()$No.TCC)>4)list(
-    #         scale_color_continuous(low = "thistle3", high = "darkred", 
-    #                                guide="colorbar", name="Number of TCCs",
-    #                                breaks=pretty_breaks()))}+
-    #       new_scale_color()+
-    #       
-    #       geom_point(data=map_df_temp() %>% filter(No.troops==0, No.TCC==0), 
-    #                  aes(x=longitude, y=latitude, shape="Blank", color="Blank"), 
-    #                  size=2, stroke=0.5)+
-    #       scale_shape_manual(values=c("Blank"=22),
-    #                          labels=c("Blank"="Locations with no troops recorded"),
-    #                          name="")+
-    #       
-    #       scale_color_manual(values=c("Blank"="grey44"),
-    #                          labels=c("Blank"="Locations with no troops recorded"),
-    #                          name="")+
-    #       # guides(shape=guide_legend(title="", order=3), color=guide_legend(title="", order=3))+
-    #       new_scale_color()+
-    #       new_scale("shape")+
-    #       scale_shape_manual(values=c("SHQ"=3,
-    #                                   "UNMO"=24,
-    #                                   "UNPOL"=23),
-    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-    #                          name="Non-combat functions")+
-    #       scale_color_manual(values=c("SHQ"="orange",
-    #                                   "UNMO"="darkblue",
-    #                                   "UNPOL"="darkgreen"),
-    #                          labels=c("SHQ"="Sector HQ", "UNMO"="Military Observers", "UNPOL"="UN Police"),
-    #                          name="Non-combat functions")
-    #   }
-    #   else{
-    #     p <- p + geom_point(data=map_df_temp(), 
-    #                         aes(x=longitude, y=latitude, size=No.troops, color=as.integer(No.TCC)),
-    #                         shape=20, alpha = 0.8)+
-    #       scale_size_binned(name="Size of deployment",range=c(2, 16))+
-    #       #  scale_color_brewer(palette="Set1", name="Number of TCCs")+
-    #       {if(max(map_df_temp()$No.TCC)<=4)list(
-    #         scale_color_continuous(low = "thistle3", high = "darkred", 
-    #                                guide="colorbar", name="Number of TCCs",
-    #                                breaks=c(1,2,3,4),
-    #                                limits=c(1,4)))}+
-    #       {if(max(map_df_temp()$No.TCC)>4)list(
-    #         scale_color_continuous(low = "thistle3", high = "darkred", 
-    #                                guide="colorbar", name="Number of TCCs",
-    #                                breaks=pretty_breaks()))}+
-    #       new_scale_color()+
-    #       scale_shape_manual(values=c("SHQ"=3,
-    #                                   "UNMO"=24,
-    #                                   "UNPOL"=23),
-    #                          labels=c("SHQ"="Sector HQ", 
-    #                                   "UNMO"="Military Observers", 
-    #                                   "UNPOL"="UN Police"),
-    #                          name="Non-combat functions")+
-    #       scale_color_manual(values=c("SHQ"="orange",
-    #                                   "UNMO"="darkblue",
-    #                                   "UNPOL"="darkgreen"),
-    #                          labels=c("SHQ"="Sector HQ", 
-    #                                   "UNMO"="Military Observers", 
-    #                                   "UNPOL"="UN Police"),
-    #                          name="Non-combat functions")
-    #   }
-    # # }
     
     if(input$MHQ_map){
       if(length(MHQ_df_temp()$location)>0){
@@ -1027,6 +937,23 @@ server <- function(input, output, session){
     colourCount = max(anim_df()$No.TCC)
     getPalette = colorRampPalette(brewer.pal(9, "Set1"))
     
+    
+    anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf, fill="grey80") + 
+      theme_void() + 
+      geom_blank()+
+      geom_point(data=anim_df(), 
+                 aes(x=longitude, y=latitude, shape="Blank", color="Blank"),
+                 size=2, stroke=0.7, fill="grey60")+
+      scale_shape_manual(values=c("Blank"=22),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      scale_color_manual(values=c("Blank"="grey44"),
+                         labels=c("Blank"="Mission sites"),
+                         name="")+
+      new_scale_color()+
+      new_scale("shape")
+    if (nrow(anim_df())>1){
+      if (any(anim_df()$No.troops, na.rm=TRUE)>0){
     anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
       theme_void() + 
       geom_point(data=anim_df(), aes(x=longitude, y=latitude, size=No.troops, 
@@ -1043,17 +970,38 @@ server <- function(input, output, session){
         scale_color_continuous(low = "thistle3", high = "darkred",
                                guide="colorbar", name="No. of Troop-\nContributing Countries",
                                breaks=pretty_breaks())
-      )}+
-      theme(plot.subtitle = element_text(color="red"),
+      )}
+      }}
+    else {
+      anim_p <- anim_p +
+        geom_point(data=anim_df() %>% filter(!is.na(No.troops & No.TCC)),
+                   aes(x=longitude, y=latitude, color=as.integer(No.TCC)),
+                   shape=20, alpha = 0.8)+
+                   {if (max(max_no_tcc$No.TCC) <=4)
+                     scale_color_continuous(low = "thistle3", high = "darkred",
+                                            guide="colorbar", name="No. of Troop-\nContributing Countries",
+                                            breaks=c(0,1,2,3,4),
+                                            limits=c(0,4))
+                   } +
+                   {if (max(max_no_tcc$No.TCC) > 4)
+                     scale_color_continuous(low = "thistle3", high = "darkred",
+                                            guide="colorbar", name="No. of Troop-\nContributing Countries",
+                                            breaks=pretty_breaks()
+                     )}
+    }
+    
+    
+    anim_p <- anim_p + theme(plot.subtitle = element_text(color="red"),
             plot.title=element_text(face="bold", hjust=0),
             #      plot.caption.position = "plot",
-            plot.caption = element_text(hjust=1),
-            legend.direction = "vertical",
-            legend.box="horizontal",
-            legend.position = "right")+
+            plot.caption = element_text(hjust=0.5),
+            legend.direction = "horizontal",
+            legend.box="vertical",
+            legend.position = "bottom",
+            legend.text = element_text(size=6))+
       transition_states(states=anim_df()$timepoint)+
       labs(title=paste0(mission_name,": ", "{closest_state}"),
-           caption="Sources: Geo-PKO v2.0\n Shapefiles from GADM.")+
+           caption="Sources: Geo-PKO v2.0\n")+
       ease_aes('linear')
     
     anim_save("outfile.gif", animate(anim_p, fps = 4, width=650, height=500, res=120))
