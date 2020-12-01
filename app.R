@@ -402,7 +402,7 @@ ui <- fluidPage(
                         sidebarPanel(radioButtons(inputId="databy_tcc", 
                                                   label="Present data by:", 
                                                   choices=c("Deployment map", "Year"),
-                                                  selected="Deployment map (default)"),
+                                                  selected="Deployment map"),
                                      helpText("The Geo-PKO dataset collects data by deployment maps published by the UN. For the best accuracy, display data by deployment maps. Data by year present the year's average troop counts and the highest number of troop-contributing countries (TCCs).")
                         ),
                         # span(h6(textOutput("tabletext", align="right"))),
