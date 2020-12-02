@@ -173,7 +173,7 @@ TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
 
 ##Troop Type Dataframe (third map)
 TTmapData <- geopko2 %>% 
-  select(Source:location, latitude, longitude, Infantry,Eng:MP) %>%
+  select(Mission, year, location, latitude, longitude, Infantry,Eng:MP) %>%
   group_by(Mission, year, location)%>% 
   mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
   distinct()%>%
