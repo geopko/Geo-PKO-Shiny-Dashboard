@@ -50,14 +50,14 @@ sapply(rmdfiles, knit, quiet=T)
 
 ####leaflet data prep####
 #Basic Data modification
-geopko2 <-geopko %>% mutate_at(vars(HeSup, Inf_No, RES_No, Avia, HeSup, longitude, latitude), as.numeric) %>%
+geopko2 <-geopko %>% mutate_at(vars(Inf_No, RES_No, longitude, latitude, Eng:MP), as.numeric) %>%
   mutate(NoTroops = as.numeric(No.troops), 
          UNPOL = as.numeric(UNPOL.dummy),
          UNMO = as.numeric(UNMO.dummy),
          Reserve = as.numeric(RES_No),
          Infantry = as.numeric(Inf_No))
 geopko2$Av<- (geopko2$Avia + geopko2$HeSup)
-
+geopko2$Av<- as.numeric(geopko2$Av)
 
 #Set symbols for Icons
 HQicon <- awesomeIcons(
@@ -173,11 +173,19 @@ TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
 
 ##Troop Type Dataframe (third map)
 TTmapData <- geopko2 %>% 
-  select(Mission, year, location, latitude, longitude, Infantry,Eng:MP) %>%
+  select(Mission, year, location, latitude, longitude, Infantry, Eng, Med, Sig, Av, Riv, Maint, Trans) %>%
   group_by(Mission, year, location)%>% 
-  mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
+  mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)),
+         Eng= sum(Eng),
+         Med= sum(Med),
+         Sig= sum(Sig),
+         Av= sum(Av),
+         Riv= sum(Riv),
+         Maint= sum(Maint),
+         Trans= sum(Trans))%>% 
   distinct()%>%
   drop_na(Infantry)
+
 
 ###Legend colours
 ColoursFrontmap <- colorBin(rev(viridis::viridis(10)), FrontmapData$ave.no.troops, bins = c(10,50,100,500,1000,2000,4000,6000,8000))
@@ -218,7 +226,7 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
                     label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$Mission)%>% lapply(htmltools::HTML))%>%
   addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2019)%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
                     label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(Av>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
                     label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$Mission)%>% lapply(htmltools::HTML))%>%
   addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2019)%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
                     label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$Mission)%>% lapply(htmltools::HTML))%>%
@@ -560,7 +568,7 @@ server <- function(input, output, session){
                         label=paste("<strong>Engineering</strong><br/>", filteredDataTTEng$location,"-",filteredDataTTEng$Mission)%>% lapply(htmltools::HTML))%>%
       addAwesomeMarkers(data = (filteredDataTTSig<-filteredDataTroopType()%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
                         label=paste("<strong>Signal</strong><br/>", filteredDataTTSig$location,"-",filteredDataTTSig$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(Av>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
                         label=paste("<strong>Aviation</strong><br/>", filteredDataTTAvia$location,"-",filteredDataTTAvia$Mission)%>% lapply(htmltools::HTML))%>%
       addAwesomeMarkers(data = (filteredDataTTRiv<-filteredDataTroopType()%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
                         label=paste("<strong>Riverine</strong><br/>", filteredDataTTRiv$location,"-",filteredDataTTRiv$Mission)%>% lapply(htmltools::HTML))%>%
