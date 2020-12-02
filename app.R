@@ -41,25 +41,17 @@ options(shiny.usecairo=TRUE)
 
 ####import data####
 
-geopko <- readr::read_csv("Geo_PKO_v2_ISO3.csv", col_types = cols(.default="c"),
-                          locale=readr::locale(encoding="latin1"))
+geopko <- readr::read_csv("Geo_PKO_v2.0_ISO3.csv", col_types = cols(.default="c"),
+                          )
+
 #geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
+#Rmd pages
 rmdfiles <- c("about.Rmd", "data.Rmd")
 sapply(rmdfiles, knit, quiet=T)
 
 
 ####leaflet data prep####
-#Basic Data modification
-geopko2 <-geopko %>% mutate_at(vars(HeSup, Inf_No, RES_No, Avia, HeSup, longitude, latitude), as.numeric) %>%
-  mutate(NoTroops = as.numeric(No.troops), 
-         UNPOL = as.numeric(UNPOL.dummy),
-         UNMO = as.numeric(UNMO.dummy),
-         Reserve = as.numeric(RES_No),
-         Infantry = as.numeric(Inf_No))
-geopko2$Av<- (geopko2$Avia + geopko2$HeSup)
-
-
 #Set symbols for Icons
 HQicon <- awesomeIcons(
   icon = 'fas fa-home',
@@ -136,49 +128,61 @@ Mainticon <- makeAwesomeIcon(
   library = 'fa'
 )
 #Data frame for first map 
-FrontmapData <- geopko2 %>% 
-  select(Mission, year, country, location, 
-         latitude, longitude, Infantry, 
-         NoTroops, Reserve, HQ, UNPOL, Med, Av, UNMO) %>%
-  group_by(Mission, year, location, country) %>% 
-  mutate(Av = max(Av, na.rm=TRUE), 
-         Med = max(Med, na.rm=TRUE),
-         Infantry = as.integer(mean(Infantry, na.rm=TRUE)),
-         Reserve = as.integer(mean(Reserve, na.rm=TRUE)),
-         UNPOL = max(UNPOL, na.rm=TRUE),
-         UNMO = max(UNMO, na.rm=TRUE),
-         ave.no.troops = as.integer(mean(NoTroops, na.rm=TRUE))) %>% 
-  distinct() 
+FrontmapData <- readxl::read_xlsx("FrontMap.xlsx", col_types="text")
 
-####Oxford comma mission text front page
+FrontmapData <- FrontmapData %>% 
+  mutate_at(vars(latitude:ave.no.troops), as.numeric)
+
+# FrontmapData <- geopko2 %>% 
+#   select(Mission, year, country, location, 
+#          latitude, longitude, Infantry, 
+#          NoTroops, Reserve, HQ, UNPOL, Med, Av, UNMO) %>%
+#   group_by(Mission, year, location, country) %>% 
+#   mutate(Av = max(Av, na.rm=TRUE), 
+#          Med = max(Med, na.rm=TRUE),
+#          Infantry = as.integer(mean(Infantry, na.rm=TRUE)),
+#          Reserve = as.integer(mean(Reserve, na.rm=TRUE)),
+#          UNPOL = max(UNPOL, na.rm=TRUE),
+#          UNMO = max(UNMO, na.rm=TRUE),
+#          ave.no.troops = as.integer(mean(NoTroops, na.rm=TRUE))) %>% 
+#   distinct() 
+
+####Oxford comma mission text front page####
 mission_comma <-function(w, oxford=T) {
   paste0(paste(w[-length(w)], collapse=", "), 
          ifelse(oxford,",","")," and ", w[length(w)] )}
   
   
 ###TCC dataframe (second map)
-TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
-                               No.TCC:notroopspertcc_17, HQ) %>% 
-  pivot_longer(nameoftcc_1:notroopspertcc_17,
-               names_to=c(".value", "TCC_id"),
-               names_sep="_") %>%
-  filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
-  mutate_at(vars(notroopspertcc), as.numeric) %>%
-  group_by(Mission, year, location, latitude, longitude, nameoftcc) %>%
-  summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
-  mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
-         single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
-  add_count(year, location, name="No.TCC")%>%
-  group_by(Mission, year, location, latitude, longitude, No.TCC) %>%
-  summarise(year.overview = str_c(single.tcc, collapse=", "))
+TCCmapData <- readxl::read_xlsx("TCCMap.xlsx", col_types="text")
+TCCmapData %>% mutate_at(vars(longitude, latitude, No.TCC), as.numeric) -> TCCmapData
+
+ 
+# TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
+#                                No.TCC:notroopspertcc_17, HQ) %>% 
+#   pivot_longer(nameoftcc_1:notroopspertcc_17,
+#                names_to=c(".value", "TCC_id"),
+#                names_sep="_") %>%
+#   filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
+#   mutate_at(vars(notroopspertcc), as.numeric) %>%
+#   group_by(Mission, year, location, latitude, longitude, nameoftcc) %>%
+#   summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
+#   mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
+#          single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
+#   add_count(year, location, name="No.TCC")%>%
+#   group_by(Mission, year, location, latitude, longitude, No.TCC) %>%
+#   summarise(year.overview = str_c(single.tcc, collapse=", "))
 
 ##Troop Type Dataframe (third map)
-TTmapData <- geopko2 %>% 
-  select(Source:location, latitude, longitude, Infantry,Eng:MP) %>%
-  group_by(Mission, year, location)%>% 
-  mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
-  distinct()%>%
-  drop_na(Infantry)
+TTmapData <- readxl::read_xlsx("TTMap.xlsx", col_types="text")
+TTmapData <- TTmapData %>% 
+  mutate_at(vars(latitude:trans), as.numeric)
+# TTmapData <- geopko2 %>% 
+#   select(source:location, latitude, longitude, Infantry,eng:mp) %>%
+#   group_by(mission, year, location)%>% 
+#   mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
+#   distinct()%>%
+#   drop_na(Infantry)
 
 ###Legend colours
 ColoursFrontmap <- colorBin(rev(viridis::viridis(10)), FrontmapData$ave.no.troops, bins = c(10,50,100,500,1000,2000,4000,6000,8000))
@@ -188,19 +192,19 @@ ColoursTTmap <- colorBin(rev(viridis::viridis(10)), TTmapData$Infantry, bins = c
 
 
 ####Map doesnt load on initial go, Map 2 base here
-TCC_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>% 
+TCC_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
   addTiles()  %>% 
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTCCmap, values = ~TCCmapData$No.TCC, group = "TCC", title= "Number of TCCs") %>%
   addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
-                   label = paste("<strong>", TCCmapData2019$Mission,"</strong><br/><strong>Location:</strong>",TCCmapData2019$location,
+                   label = paste("<strong>", TCCmapData2019$mission,"</strong><br/><strong>Location:</strong>",TCCmapData2019$location,
                                  "<br/><strong>Total number of TCCs:</strong>",TCCmapData2019$No.TCC, "<br/><strong>Countries:</strong>",
                                  TCCmapData2019$year.overview)%>% lapply(htmltools::HTML))
 
 ####BaseMap third map 
-TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>% 
+TroopType_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
   addTiles() %>% 
   addLayersControl(
     position = "bottomright",
@@ -212,31 +216,31 @@ TroopType_basemap <- leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>%
   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
   addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                    fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                   label = paste("<strong>", TTmapDataInf$Mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
-                    label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2019)%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
-                    label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2019)%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
-                    label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
-                    label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2019)%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
-                    label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2019)%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
-                    label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$location,"-",TTmapDataMaint$Mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2019)%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
-                    label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$location,"-",TTmapDataTrans$Mission)%>% lapply(htmltools::HTML))
+                   label = paste("<strong>", TTmapDataInf$mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
+                    label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2019)%>%filter(eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
+                    label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2019)%>%filter(sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
+                    label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(av>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+                    label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2019)%>%filter(riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
+                    label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2019)%>%filter(maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
+                    label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$location,"-",TTmapDataMaint$mission)%>% lapply(htmltools::HTML))%>%
+  addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2019)%>%filter(trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
+                    label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$location,"-",TTmapDataTrans$mission)%>% lapply(htmltools::HTML))
 
 
 ####data prep deployment maps####
 
 map_df <- geopko %>%
-  mutate_at(vars(c(No.troops, No.TCC, longitude, latitude,
-                   UNMO.dummy, UNPOL.dummy)), as.numeric) %>%
-  mutate(HQ=as.factor(HQ))
+  mutate_at(vars(c(no.troops, no.tcc, longitude, latitude,
+                   unmo.dummy, unpol.dummy)), as.numeric) %>%
+  mutate(hq=as.factor(hq))
 
-cclist3 <- map_df %>% select(Mission, iso3c) %>% distinct() %>% #creating list of country codes for GADM sf files dowload 
+cclist3 <- map_df %>% select(mission, iso3c) %>% distinct() %>% #creating list of country codes for GADM sf files dowload 
   mutate(iso3c=strsplit(as.character(iso3c), ", ")) %>% 
   unnest(iso3c) %>% distinct()
 
@@ -249,18 +253,23 @@ country_list <-function(w, oxford=T) {
 }
 #### data prep TCC ####
 tcc_df <- geopko %>% 
-  mutate_at(vars(c(No.troops, No.TCC, longitude, latitude,
-                   UNMO.dummy, UNPOL.dummy)), as.numeric) %>% 
-  mutate(HQ=as.factor(HQ)) %>% 
-  select(Source, Mission, year, month, MonthName,
-         No.troops, nameoftcc_1:notroopspertcc_17) %>% 
-  group_by(Source, Mission, year, month, MonthName) %>% 
-  mutate(Total.troops=sum(No.troops, na.rm=T)) %>% ungroup()
+  mutate_at(vars(c(no.troops, no.tcc, longitude, latitude,
+                   unmo.dummy, unpol.dummy)), as.numeric) %>% 
+  mutate(hq=as.factor(hq)) %>% 
+  select(source, mission, year, month, MonthName,
+         no.troops, nameoftcc_1:notroopspertcc_17) %>% 
+  group_by(source, mission, year, month, MonthName) %>% 
+  mutate(Total.troops=sum(no.troops, na.rm=T)) %>% ungroup()
 
 #### anim ####
 
-geopko %>% group_by(Mission) %>% count(length(unique(Source))) %>% 
-  filter(`length(unique(Source))`> 5) %>% pull(Mission) -> anim_choice_list
+map_df %>% group_by(mission) %>% count(length(unique(timepoint))) %>% 
+  filter(`length(unique(timepoint))`> 5) %>% pull(mission) -> anim_choice_list1
+
+map_df %>% group_by(mission, timepoint) %>% summarise(total= sum(no.troops, na.rm=TRUE)) %>% 
+  filter(total!= 0) %>% distinct(mission) %>% pull() -> anim_choice_list2
+
+intersect(anim_choice_list1, anim_choice_list2) -> anim_choice_list
 
 #colnames(tcc_df) <- sub("name.of.TCC", "nameofTCC_", colnames(tcc_df)) obsolete script
 #colnames(tcc_df) <- sub("No.troops.per.TCC", "notroopsperTCC_", colnames(tcc_df))
@@ -270,7 +279,7 @@ geopko %>% group_by(Mission) %>% count(length(unique(Source))) %>%
 ####lollipop data prep####
 
 Years <- geopko
-Years <- Years %>% group_by(Mission, location)%>% summarize(start_date=min(year), end_date=max(year))
+Years <- Years %>% group_by(mission, location)%>% summarize(start_date=min(year), end_date=max(year))
 
 ####UI####
 
@@ -297,8 +306,8 @@ ui <- fluidPage(
                                                            animate = animationOptions(interval = 2000, loop = TRUE)), 
                                                tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}")),
                                                pickerInput("missionsFront","Select mission(s)", 
-                                                           choices=as.character(unique(FrontmapData$Mission)),
-                                                           selected =as.character(unique(FrontmapData$Mission)), 
+                                                           choices=as.character(unique(FrontmapData$mission)),
+                                                           selected =as.character(unique(FrontmapData$mission)), 
                                                            options = list(`actions-box` = TRUE),multiple = T),
                                                chooseSliderSkin("Shiny", color = "transparent"),
                                                setSliderColor("transparent", 1),
@@ -318,8 +327,8 @@ ui <- fluidPage(
                                                                          width = "100%",
                                                                          animate = animationOptions(interval = 2000, loop = TRUE)),
                                                              pickerInput("missionsTCC","Select mission(s)", 
-                                                                         choices=as.character(unique(TCCmapData$Mission)),
-                                                                         selected =as.character(unique(TCCmapData$Mission)) , 
+                                                                         choices=as.character(unique(TCCmapData$mission)),
+                                                                         selected =as.character(unique(TCCmapData$mission)) , 
                                                                          options = list(`actions-box` = TRUE),multiple = T), width = 3),
                                                mainPanel ( tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),leafletOutput("map",width = "115%")),
                                                position = c("left", "right")
@@ -338,8 +347,8 @@ ui <- fluidPage(
                                                                         width = "100%",
                                                                         animate = animationOptions(interval = 2000, loop = TRUE)),
                                                             pickerInput("missionsTT","Select mission(s)", 
-                                                                        choices=as.character(unique(TTmapData$Mission)),
-                                                                        selected =as.character(unique(TTmapData$Mission)) , 
+                                                                        choices=as.character(unique(TTmapData$mission)),
+                                                                        selected =as.character(unique(TTmapData$mission)) , 
                                                                         options = list(`actions-box` = TRUE),multiple = T), width = 3),
                                                mainPanel ( tags$style(type = "text/css", "#TroopTypeMap {height: calc(100vh - 130px) !important;}"), leafletOutput("TroopTypeMap", width = "115%")),####Screen size, responsive to different types
                                                position = c("left", "right")))),
@@ -350,7 +359,7 @@ ui <- fluidPage(
                                    sidebarPanel(width=3, 
                                                 p("Where are UN peacekeepers posted, and how many? Select the options below to visualise."),
                                                 selectInput(inputId="mission_map", label="Select a mission",
-                                                            choices=levels(factor(map_df$Mission)), 
+                                                            choices=levels(factor(map_df$mission)), 
                                                             width=150, selected="MINUSMA", multiple=F),
                                                 selectInput("timepoint_map", 
                                                             "Choose year and month", choices=NULL, selected=NULL),
@@ -383,8 +392,8 @@ ui <- fluidPage(
                                  titlePanel("Animated Maps"),
                                  sidebarLayout(
                                    sidebarPanel(width=3, 
-                                                p(""),
-                                                selectInput(inputId="anim_map", label="Animated maps show changes over time. Select a mission and click on the button below to explore.",
+                                                p("Animated maps show changes over time. Select a mission and click on the button below to explore."),
+                                                selectInput(inputId="anim_map", label="Mission",
                                                             choices=anim_choice_list, width=200, selected=NULL),
                                                 actionButton("go_anim", "Animated!"),
                                                 tags$div("This tool relies on the package",tags$em("gganimate."),"Rendering may take time as it entails producing and combining multiple frames. For the best effect, only missions with more than five source maps are available to select here.")
@@ -419,7 +428,7 @@ ui <- fluidPage(
                         sidebarPanel(
                           p("This graph shows the specific time period during which a location had at least one active deployment."),
                           selectInput(inputId="Lollipop_map", label="Select a mission",
-                                      choices=levels(factor(geopko$Mission)), width=150,
+                                      choices=levels(factor(geopko$mission)), width=150,
                                       selected="MONUSCO"), width= 3,
                           helpText("The graphs do not show possible temporal interruptions.")
                         ),
@@ -440,7 +449,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session){
   
-  mission_list <- map_df %>% distinct(Mission) %>% arrange(Mission)
+  mission_list <- map_df %>% distinct(mission) %>% arrange(mission)
   
   ####Leaflet####
   
@@ -448,22 +457,22 @@ server <- function(input, output, session){
   #Front map
   filteredData <- reactive({
     FrontmapData %>%
-      drop_na(ave.no.troops)%>% filter(Mission %in% input$missionsFront & year %in% input$YearFront)
+      drop_na(ave.no.troops)%>% filter(mission %in% input$missionsFront & year %in% input$YearFront)
   })
   
   #Troop Contributing Countries map
   filteredDataTCC <- reactive({
-    TCCmapData %>% filter(Mission %in% input$missionsTCC & year %in% input$YearTCC)
+    TCCmapData %>% filter(mission %in% input$missionsTCC & year %in% input$YearTCC)
   })
   
   #Troop Type map
   filteredDataTroopType <- reactive({
-    TTmapData %>% filter(Mission %in% input$missionsTT & year %in% input$YearTT)
+    TTmapData %>% filter(mission %in% input$missionsTT & year %in% input$YearTT)
   })
   
   #####Front map basis  
   output$basemap <- renderLeaflet({
-    leaflet(geopko2, options = leafletOptions(minZoom = 2)) %>% 
+    leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
       addTiles() %>% 
       addLayersControl(
         position = "bottomright",
@@ -510,7 +519,7 @@ server <- function(input, output, session){
 
   #Active missions in given year
   output$reactive_yearMissions <- renderText({
-    paste0("Active missions in ",unique(filteredData()$year),": ", mission_comma(unique(filteredData()$Mission)))
+    paste0("Active missions in ",unique(filteredData()$year),": ", mission_comma(unique(filteredData()$mission)))
   }) 
 
   
@@ -521,25 +530,25 @@ server <- function(input, output, session){
       clearShapes() %>%
       addCircleMarkers(data = (filteredDataTroop<-filteredData()%>%filter(ave.no.troops>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataTroop$Mission,"<br/>Location:</strong>",filteredDataTroop$location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataTroop$mission,"<br/>Location:</strong>",filteredDataTroop$location,"<br/><strong>Troop number:</strong>", filteredDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataMissionSite<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
-                       label=paste("<strong>", filteredDataMissionSite$Mission,"<br/>Location:</strong>",filteredDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataMissionSite$mission,"<br/>Location:</strong>",filteredDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataInfantry<-filteredData()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
-                       label=paste("<strong>", filteredDataInfantry$Mission,"<br/>Location:</strong>",filteredDataInfantry$location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataInfantry$mission,"<br/>Location:</strong>",filteredDataInfantry$location,"<br/><strong>Troop number:</strong>", filteredDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataMissionSiteOnly<-filteredData()%>%filter(ave.no.troops==0)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
                        fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
-                       label=paste("<strong>", filteredDataMissionSiteOnly$Mission,"<br/>Location:</strong>",filteredDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataMissionSiteOnly$mission,"<br/>Location:</strong>",filteredDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
       addCircleMarkers(data = (filteredDataReserve<-filteredData()%>%filter(Reserve>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
-                       label=paste("<strong>", filteredDataReserve$Mission,"<br/>Location:</strong>",filteredDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
+                       label=paste("<strong>", filteredDataReserve$mission,"<br/>Location:</strong>",filteredDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", filteredDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
       addAwesomeMarkers(data = (filteredDataUNPOL<-filteredData()%>%filter(UNPOL>0)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
-                        label=paste("<strong>UNPOL</strong><br/>",filteredDataUNPOL$location,"-",filteredDataUNPOL$Mission)%>% lapply(htmltools::HTML)) %>%
+                        label=paste("<strong>UNPOL</strong><br/>",filteredDataUNPOL$location,"-",filteredDataUNPOL$mission)%>% lapply(htmltools::HTML)) %>%
       addAwesomeMarkers(data = (filteredDataUNMO<-filteredData()%>%filter(UNMO>0)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
-                        label=paste("<strong>UNMO</strong><br/>",filteredDataUNMO$location,"-",filteredDataUNMO$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataHQ<-filteredData()%>%filter(HQ==3)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
-                        label=paste("<strong>Mission HQ</strong><br/>",filteredDataHQ$location,"-",filteredDataHQ$Mission)%>% lapply(htmltools::HTML))
+                        label=paste("<strong>UNMO</strong><br/>",filteredDataUNMO$location,"-",filteredDataUNMO$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataHQ<-filteredData()%>%filter(hq==3)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
+                        label=paste("<strong>Mission HQ</strong><br/>",filteredDataHQ$location,"-",filteredDataHQ$mission)%>% lapply(htmltools::HTML))
   })
   
   
@@ -551,7 +560,7 @@ server <- function(input, output, session){
       addCircleMarkers(data = filteredDataTCC(), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC)*(1.5), 
                        fillOpacity = 0.6, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                          "width"= "150px", "white-space"="normal")),
-                       label = paste("<strong>", filteredDataTCC()$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTCC()$location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
+                       label = paste("<strong>", filteredDataTCC()$mission,"</strong><br/><strong>Location:</strong>",filteredDataTCC()$location, "<br/><strong>Total number of TCCs:</strong>",filteredDataTCC()$No.TCC,"<br/><strong>Countries:</strong>",filteredDataTCC()$year.overview)%>% lapply(htmltools::HTML))
   })
   
   
@@ -562,21 +571,21 @@ server <- function(input, output, session){
       clearShapes() %>%
       addCircleMarkers(data = (filteredDataTTInfantry<-filteredDataTroopType()%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
                        fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-                       label = paste("<strong>", filteredDataTTInfantry$Mission,"</strong><br/><strong>Location:</strong>",filteredDataTTInfantry$location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTMed<-filteredDataTroopType()%>%filter(Med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
-                        label=paste("<strong>Medical</strong><br/>", filteredDataTTMed$location,"-",filteredDataTTMed$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTEng<-filteredDataTroopType()%>%filter(Eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
-                        label=paste("<strong>Engineering</strong><br/>", filteredDataTTEng$location,"-",filteredDataTTEng$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTSig<-filteredDataTroopType()%>%filter(Sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
-                        label=paste("<strong>Signal</strong><br/>", filteredDataTTSig$location,"-",filteredDataTTSig$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(Avia>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
-                        label=paste("<strong>Aviation</strong><br/>", filteredDataTTAvia$location,"-",filteredDataTTAvia$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTRiv<-filteredDataTroopType()%>%filter(Riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
-                        label=paste("<strong>Riverine</strong><br/>", filteredDataTTRiv$location,"-",filteredDataTTRiv$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTMaint<-filteredDataTroopType()%>%filter(Maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
-                        label=paste("<strong>Maintenance</strong><br/>", filteredDataTTMaint$location,"-",filteredDataTTMaint$Mission)%>% lapply(htmltools::HTML))%>%
-      addAwesomeMarkers(data = (filteredDataTTTra<-filteredDataTroopType()%>%filter(Trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
-                        label=paste("<strong>Transport</strong><br/>", filteredDataTTTra$location,"-",filteredDataTTTra$Mission)%>% lapply(htmltools::HTML))
+                       label = paste("<strong>", filteredDataTTInfantry$mission,"</strong><br/><strong>Location:</strong>",filteredDataTTInfantry$location, "<br/><strong>Troop Number:</strong>",filteredDataTTInfantry$Infantry)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTMed<-filteredDataTroopType()%>%filter(med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
+                        label=paste("<strong>Medical</strong><br/>", filteredDataTTMed$location,"-",filteredDataTTMed$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTEng<-filteredDataTroopType()%>%filter(eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
+                        label=paste("<strong>Engineering</strong><br/>", filteredDataTTEng$location,"-",filteredDataTTEng$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTSig<-filteredDataTroopType()%>%filter(sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
+                        label=paste("<strong>Signal</strong><br/>", filteredDataTTSig$location,"-",filteredDataTTSig$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTAvia<-filteredDataTroopType()%>%filter(av>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
+                        label=paste("<strong>Aviation</strong><br/>", filteredDataTTAvia$location,"-",filteredDataTTAvia$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTRiv<-filteredDataTroopType()%>%filter(riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
+                        label=paste("<strong>Riverine</strong><br/>", filteredDataTTRiv$location,"-",filteredDataTTRiv$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTMaint<-filteredDataTroopType()%>%filter(maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
+                        label=paste("<strong>Maintenance</strong><br/>", filteredDataTTMaint$location,"-",filteredDataTTMaint$mission)%>% lapply(htmltools::HTML))%>%
+      addAwesomeMarkers(data = (filteredDataTTTra<-filteredDataTroopType()%>%filter(trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
+                        label=paste("<strong>Transport</strong><br/>", filteredDataTTTra$location,"-",filteredDataTTTra$mission)%>% lapply(htmltools::HTML))
   })
   
   ####TCC tables####
@@ -587,12 +596,12 @@ server <- function(input, output, session){
       filter(!is.na(nameoftcc)) %>%
       mutate_at(vars(notroopspertcc), as.numeric) %>% 
       select(-tcc_id) %>% 
-      group_by(Source, Mission, year, MonthName, Total.troops, nameoftcc)%>%
+      group_by(source, mission, year, MonthName, Total.troops, nameoftcc)%>%
       summarise(total.tcc=as.character(sum(notroopspertcc), na.rm=TRUE)) %>% 
-      add_count(Source, name="No.TCC") %>%
+      add_count(source, name="No.TCC") %>%
       mutate(total.tcc=ifelse(is.na(total.tcc), "size unknown", total.tcc), 
              overview=paste0(nameoftcc," (",total.tcc,")")) %>%
-      group_by(Source, Mission, year, MonthName, Total.troops, No.TCC) %>%
+      group_by(source, mission, year, MonthName, Total.troops, No.TCC) %>%
       summarise(details=str_c(overview, collapse=", ")) %>% 
       arrange(desc(year))
   }) 
@@ -603,23 +612,23 @@ server <- function(input, output, session){
       filter(!is.na(nameoftcc)) %>%
       mutate_at(vars(notroopspertcc), as.numeric) %>% 
       select(-TCC_id) %>% 
-      group_by(Source, Mission, year, month, Total.troops, nameoftcc)%>%
+      group_by(source, mission, year, month, Total.troops, nameoftcc)%>%
       summarise(total.each.tcc=as.character(sum(notroopspertcc, na.rm=TRUE))) %>% 
-      add_count(Source, name="No.TCC") %>%
+      add_count(source, name="No.TCC") %>%
       mutate(total.each.tcc=ifelse(total.each.tcc=="0","size unknown", total.each.tcc),
              overview=paste0(nameoftcc," (",total.each.tcc,")")) %>%
       select(-nameoftcc, -total.each.tcc) %>%
-      group_by(Source, Mission, year, month, Total.troops, No.TCC) %>%
+      group_by(source, mission, year, month, Total.troops, No.TCC) %>%
       summarise(byyear.overview=str_c(overview, collapse=", ")) %>% 
       arrange(desc(year)) %>%
-      group_by(Mission, year) %>% mutate(min.troops= as.character(min(Total.troops)),
+      group_by(mission, year) %>% mutate(min.troops= as.character(min(Total.troops)),
                                          max.troops=as.character(max(Total.troops)),
                                          ave.troops=as.character(round(mean(Total.troops)))) %>%
-      group_by(Mission, year) %>% arrange(desc(No.TCC)) %>% dplyr::slice(1) %>% 
+      group_by(mission, year) %>% arrange(desc(No.TCC)) %>% dplyr::slice(1) %>% 
       mutate(ave.troops=ifelse(is.na(ave.troops), "Unknown", ave.troops),
              min.troops=ifelse(is.na(min.troops), "Unknown", min.troops),
              max.troops=ifelse(is.na(max.troops), "Unknown", max.troops)) %>%
-      select(Mission, year, No.TCC, byyear.overview, min.troops, max.troops, ave.troops)
+      select(mission, year, No.TCC, byyear.overview, min.troops, max.troops, ave.troops)
   })
   
   
@@ -645,12 +654,12 @@ server <- function(input, output, session){
   #creating list of sf objects to download
   sfdf <- reactive({
     req(input$mission_map)
-    cclist3 %>% filter(Mission %in% input$mission_map)
+    cclist3 %>% filter(mission %in% input$mission_map)
   })
   
   observeEvent(input$mission_map,{
     updateSelectInput(session, 'timepoint_map',
-                      choices = unique(map_df$joined_date[map_df$Mission==input$mission_map]))
+                      choices = unique(map_df$joined_date[map_df$mission==input$mission_map]))
     
   })
   
@@ -658,7 +667,7 @@ server <- function(input, output, session){
     req(input$mission_map)
     req(input$timepoint_map)
     
-    map_df %>% filter(Mission %in% input$mission_map) %>%
+    map_df %>% filter(mission %in% input$mission_map) %>%
       filter(joined_date %in% input$timepoint_map)
     
   })
@@ -666,7 +675,7 @@ server <- function(input, output, session){
   size_for_nrow1 <- reactive({
     req(map_df_temp())
     if(NROW(map_df_temp())==1){
-      map_df_temp() %>% pull(No.troops) %>% `^`^(1/3)
+      map_df_temp() %>% pull(no.troops) %>% `^`^(1/3)
     }
   })
   # map_zero <- reactive({
@@ -687,23 +696,23 @@ server <- function(input, output, session){
   
   UNMO_df_temp <- reactive({
     req(input$MO_map)
-    map_df_temp() %>% filter(UNMO.dummy==1)
+    map_df_temp() %>% filter(unmo.dummy==1)
   })
   
   UNPOL_df_temp <- reactive({
     req(input$UNPOL_map)
-    map_df_temp() %>% filter(UNPOL.dummy==1)
+    map_df_temp() %>% filter(unpol.dummy==1)
   })
   
   SHQ_df_temp <- reactive({
     req(input$SHQ_map)
     
-    map_df_temp() %>% filter(HQ=="2")
+    map_df_temp() %>% filter(hq=="2")
   })
   
   MHQ_df_temp <- reactive({
     req(input$MHQ_map)
-    map_df_temp() %>% filter(HQ=="3")
+    map_df_temp() %>% filter(hq=="3")
   })
   
   maplist <- reactive({
@@ -732,12 +741,12 @@ server <- function(input, output, session){
     
     mapshapefiles <- gadm_sf_loadCountries(c(maplist()), level=1)
     
-    max_no_tcc <- map_df_temp() %>% mutate(No.TCC=ifelse(is.na(No.TCC), 0, No.TCC))
+    max_no_tcc <- map_df_temp() %>% mutate(no.tcc=ifelse(is.na(no.tcc), 0, no.tcc))
     
     p <- ggplot() + geom_sf(data=mapshapefiles$sf, fill="grey80") + 
       theme_void() + 
-      labs(title=paste(map_df_temp()$Mission,": ", map_df_temp()$timepoint),
-           caption="Sources: Geo-PKO v2.0\n")+
+      labs(title=paste(map_df_temp()$mission,": ", map_df_temp()$timepoint),
+           caption="Source: Geo-PKO v2.0\n")+
       geom_blank()+
       geom_point(data=map_df_temp(), 
                  aes(x=longitude, y=latitude, shape="Blank", color="Blank"),
@@ -752,19 +761,19 @@ server <- function(input, output, session){
       new_scale("shape")
     
     if (nrow(map_df_temp())>1){
-      if(max(map_df_temp()$No.troops, na.rm=TRUE)>0){
+      if(max(map_df_temp()$no.troops, na.rm=TRUE)>0){
         p <- p+
-          geom_point(data=map_df_temp() %>% filter(!is.na(No.troops & No.TCC)),
-                     aes(x=longitude, y=latitude, size=No.troops, color=as.integer(No.TCC)),
+          geom_point(data=map_df_temp() %>% filter(!is.na(no.troops & no.tcc)),
+                     aes(x=longitude, y=latitude, size=no.troops, color=as.integer(no.tcc)),
                      shape=20, alpha = 0.8)+
           scale_size_binned(name="Size of deployment",range=c(2, 16))+
-          {if (max(max_no_tcc$No.TCC) <=4)
+          {if (max(max_no_tcc$no.tcc) <=4)
             scale_color_continuous(low = "thistle3", high = "darkred",
                                    guide="colorbar", name="No. of Troop-\nContributing Countries",
                                    breaks=c(0,1,2,3,4),
                                    limits=c(0,4))
           } +
-          {if (max(max_no_tcc$No.TCC) > 4)
+          {if (max(max_no_tcc$no.tcc) > 4)
             scale_color_continuous(low = "thistle3", high = "darkred",
                                    guide="colorbar", name="No. of Troop-\nContributing Countries",
                                    breaks=pretty_breaks()
@@ -772,16 +781,16 @@ server <- function(input, output, session){
       }
       else{
         p <- p+
-          geom_point(data=map_df_temp() %>% filter(!is.na(No.troops & No.TCC)),
-                     aes(x=longitude, y=latitude, color=as.integer(No.TCC)),
+          geom_point(data=map_df_temp() %>% filter(!is.na(no.troops & no.tcc)),
+                     aes(x=longitude, y=latitude, color=as.integer(no.tcc)),
                      shape=20, alpha = 0.8)+
-                     {if (max(max_no_tcc$No.TCC) <=4)
+                     {if (max(max_no_tcc$no.tcc) <=4)
                        scale_color_continuous(low = "thistle3", high = "darkred",
                                               guide="colorbar", name="No. of Troop-\nContributing Countries",
                                               breaks=c(0,1,2,3,4),
                                               limits=c(0,4))
                      } +
-                     {if (max(max_no_tcc$No.TCC) > 4)
+                     {if (max(max_no_tcc$no.tcc) > 4)
                        scale_color_continuous(low = "thistle3", high = "darkred",
                                               guide="colorbar", name="No. of Troop-\nContributing Countries",
                                               breaks=pretty_breaks()
@@ -790,18 +799,18 @@ server <- function(input, output, session){
       }
     }
     if(nrow(map_df_temp()) ==1){
-      p <- p+ geom_point(data=map_df_temp() %>% filter(!is.na(No.troops & No.TCC)),
-                         aes(x=longitude, y=latitude, color=as.integer(No.TCC), size="Custom"),
+      p <- p+ geom_point(data=map_df_temp() %>% filter(!is.na(no.troops & no.tcc)),
+                         aes(x=longitude, y=latitude, color=as.integer(no.tcc), size="Custom"),
                          shape=20, alpha = 0.8)+
-        scale_size_manual(name="Size of deployment", values=c("Custom"=round((max(map_df_temp()$No.troops))^(1/3))),
-                          labels=c("Custom"=paste(max(map_df_temp()$No.troops))))+
-                          {if (max(max_no_tcc$No.TCC) <=4)
+        scale_size_manual(name="Size of deployment", values=c("Custom"=round((max(map_df_temp()$no.troops))^(1/3))),
+                          labels=c("Custom"=paste(max(map_df_temp()$no.troops))))+
+                          {if (max(max_no_tcc$no.tcc) <=4)
                             scale_color_continuous(low = "thistle3", high = "darkred",
                                                    guide="colorbar", name="No. of Troop-\nContributing Countries",
                                                    breaks=c(0,1,2,3,4),
                                                    limits=c(0,4))
                           } +
-                          {if (max(max_no_tcc$No.TCC) > 4)
+                          {if (max(max_no_tcc$no.tcc) > 4)
                             scale_color_continuous(low = "thistle3", high = "darkred",
                                                    guide="colorbar", name="No. of Troop-\nContributing Countries",
                                                    breaks=pretty_breaks()
@@ -828,7 +837,7 @@ server <- function(input, output, session){
                              aes(x=longitude, y=latitude, shape="HQ"),
                              shape=4, color="red", size=6)+
           geom_label_repel(data=MHQ_df_temp(),
-                           aes(x=longitude, y=latitude, label=paste0("Mission HQ: ",location)
+                           aes(x=longitude, y=latitude, label=paste0("Mission hq: ",location)
                            ),
                            box.padding = 2,
                            size = 3,
@@ -839,7 +848,7 @@ server <- function(input, output, session){
     
     if(input$SHQ_map){
       if(length(SHQ_df_temp()$location)>0){
-        p <- p +  geom_point(data=map_df_temp() %>% filter(HQ=="2"),
+        p <- p +  geom_point(data=map_df_temp() %>% filter(hq=="2"),
                              aes(x=longitude, y= latitude, shape="SHQ", color="SHQ"), size=5)}
       else{
         p <- p + labs(subtitle="Sector HQs not available for this time period. Please deselect the option.")}
@@ -847,7 +856,7 @@ server <- function(input, output, session){
     
     if(input$MO_map){
       if(length(UNMO_df_temp()$location)>0){
-        p <- p +  geom_point(data=map_df_temp() %>% filter(UNMO.dummy==1),
+        p <- p +  geom_point(data=map_df_temp() %>% filter(unmo.dummy==1),
                              aes(x=longitude, y= latitude, shape="UNMO", color="UNMO"),
                              #color="darkblue",
                              position=position_jitter(),
@@ -858,7 +867,7 @@ server <- function(input, output, session){
     
     if(input$UNPOL_map){
       if(length(UNPOL_df_temp()$location)>0){
-        p <- p +  geom_point(data=map_df_temp() %>% filter(UNPOL.dummy==1),
+        p <- p +  geom_point(data=map_df_temp() %>% filter(unpol.dummy==1),
                              aes(x=longitude, y= latitude, shape="UNPOL", color="UNPOL"),
                              position=position_jitter(),
                              size=4)}
@@ -886,35 +895,47 @@ server <- function(input, output, session){
     req(input$timepoint_map)
     
     map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
-      select(ID, location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
-             -Inf_No, -FPU_No, -RES_No, -FP_No) %>%
-      mutate_at(vars(`Inf`:`Other.Type`), as.numeric) %>% 
+      select(ID, location, no.troops, no.tcc, rpf:uav, other.type, -rpf.no,
+             -inf.no, -fpu.no, -res.no, -fp.no) %>%
+      mutate_at(vars(`inf`:`other.type`), as.numeric) %>% 
       rowwise(ID) %>% 
-      mutate(typecheck_var=sum(c_across(`Inf`:`Other.Type`))) %>% 
+      mutate(typecheck_var=sum(c_across(`inf`:`other.type`))) %>% 
       filter(typecheck_var >0)
   })
   
   static_map_details <- reactive({
     if(length(typecheck_df()>0)){
       map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
-        select(ID, location, No.troops, No.TCC, RPF:UAV, Other.Type, -RPF_No,
-               -Inf_No, -FPU_No, -RES_No, -FP_No) %>% 
+        select(ID, location, no.troops, no.tcc, rpf:uav, other.type, -rpf.no,
+               -inf.no, -fpu.no, -res.no, -fp.no) %>% 
         mutate(across(everything(), as.character)) %>% 
         pivot_longer(5:23, names_to="trooptypes", values_to="binary") %>% 
         filter(binary==1) %>% 
-        mutate(trooptypes=case_when(trooptypes == "Other.Type" ~ "Others",
-                                    trooptypes == "SF" ~ "Special Forces", 
-                                    trooptypes == "Inf" ~ "Infantry",
+        mutate(trooptypes=case_when(trooptypes == "others" ~ "Others",
+                                    trooptypes == "sf" ~ "Special Forces", 
+                                    trooptypes == "inf" ~ "Infantry",
+                                    trooptypes == "he.sup" ~ "Helicopter Support", 
+                                    trooptypes == "avia" ~ "Aviation",
+                                    trooptypes == "mp" ~ "Military Police", 
+                                    trooptypes == "uav" ~ "Unmanned Aerial Vehicles",
+                                    trooptypes == "recon" ~ "Reconnaissance", 
+                                    trooptypes == "maint" ~ "Maintenance",
+                                    trooptypes == "med" ~ "Medical",
+                                    trooptypes == "eng" ~ "Engineer", 
+                                    trooptypes == "fpu" ~ "Formed Police Unit", 
+                                    trooptypes == "fp" ~ "Force Protection", 
+                                    trooptypes == "riv" ~ "Riverine",
+                                    trooptypes == "eng" ~ "Engineer", 
                                     TRUE ~ as.character(trooptypes))) %>% 
-        group_by(ID, location, No.troops, No.TCC) %>% 
+        group_by(ID, location, no.troops, no.tcc) %>% 
         summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% ungroup() %>% 
-        mutate(No.TCC=ifelse(is.na(No.TCC), "Unknown", No.TCC)) %>% 
+        mutate(no.tcc=ifelse(is.na(no.tcc), "Unknown", no.tcc)) %>% 
         select(-ID)}
     else {
       map_df_temp() %>% 
-        select(location, No.troops, No.TCC) %>% 
+        select(location, no.troops, no.tcc) %>% 
         mutate(Troop.type="Data on troop types not available for this location") %>% 
-        mutate(No.TCC=ifelse(is.na(No.TCC), "Unknown", No.TCC))
+        mutate(no.tcc=ifelse(is.na(no.tcc), "Unknown", no.tcc))
     }
   })
   
@@ -928,27 +949,28 @@ server <- function(input, output, session){
   ####animated maps####
   anim_sf <- reactive({
     req(input$anim_map)
-    cclist3 %>% filter(Mission %in% input$anim_map)
+    cclist3 %>% filter(mission %in% input$anim_map)
   })
   
   anim_df <- eventReactive(input$go_anim,{
     req(input$go_anim)
     req(input$anim_map)
-    map_df %>% filter(Mission %in% input$anim_map) %>% arrange(timepoint)
+    map_df %>% filter(mission %in% input$anim_map) %>% arrange(timepoint)
   }) 
   
   
   
   output$animated <- renderImage({
     req(input$anim_map)
+    req(input$go_anim)
     
     outfile <- tempfile(fileext= '.gif')
     
     anim_maplist <- pull(anim_sf(), iso3c)
-    anim_max_no_tcc <- anim_df() %>% mutate(No.TCC=ifelse(is.na(No.TCC), 0, No.TCC))
+    anim_max_no_tcc <- anim_df() %>% mutate(no.tcc=ifelse(is.na(no.tcc), 0, no.tcc))
     anim_mapshapefiles <- gadm_sf_loadCountries(c(anim_maplist), level=1)
-    mission_name <- anim_df() %>% distinct(Mission)
-    colourCount = max(anim_df()$No.TCC)
+    mission_name <- anim_df() %>% distinct(mission)
+    colourCount = max(anim_df()$no.tcc)
     getPalette = colorRampPalette(brewer.pal(9, "Set1"))
     
     
@@ -967,20 +989,22 @@ server <- function(input, output, session){
       new_scale_color()+
       new_scale("shape")
     if (nrow(anim_df())>1){
-      if (any(anim_df()$No.troops, na.rm=TRUE)>0){
-    anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
+      if (sum(anim_df()$no.troops, na.rm=TRUE)>0){
+      anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf) + 
       theme_void() + 
-      geom_point(data=anim_df(), aes(x=longitude, y=latitude, size=No.troops, 
-                                     color=as.integer(No.TCC), group=timepoint),
-                 shape=20, alpha = 0.5)+
-      scale_size_binned(name="Size of deployment",range=c(2, 16))+
-      {if(max(anim_max_no_tcc$No.TCC)<=4)list(
+      geom_point(data=anim_df(), aes(x=longitude, y=latitude, size=no.troops, 
+                                     color=as.integer(no.tcc), group=timepoint),
+                 shape=20, alpha = 0.65)+
+      scale_size_binned(name="Deployment size",range=c(2, 16))+
+        
+      {if(max(anim_max_no_tcc$no.tcc)<=4)list(
         scale_color_continuous(low = "thistle3", high = "darkred",
                                guide="colorbar", name="No. of Troop-\nContributing Countries",
                                breaks=c(1,2,3,4),
                                limits=c(1,4)))
       } +
-      {if(max(anim_max_no_tcc$No.TCC)>4)list(
+        
+      {if(max(anim_max_no_tcc$no.tcc)>4)list(
         scale_color_continuous(low = "thistle3", high = "darkred",
                                guide="colorbar", name="No. of Troop-\nContributing Countries",
                                breaks=pretty_breaks())
@@ -988,16 +1012,16 @@ server <- function(input, output, session){
       }}
     else {
       anim_p <- anim_p +
-        geom_point(data=anim_df() %>% filter(!is.na(No.troops & No.TCC)),
-                   aes(x=longitude, y=latitude, color=as.integer(No.TCC)),
-                   shape=20, alpha = 0.8)+
-                   {if (max(max_no_tcc$No.TCC) <=4)
+        geom_point(data=anim_df() %>% filter(!is.na(no.troops & no.tcc)),
+                   aes(x=longitude, y=latitude, color=as.integer(no.tcc)),
+                   shape=20, alpha = 0.65)+
+                   {if (max(anim_max_no_tcc$no.tcc) <=4)
                      scale_color_continuous(low = "thistle3", high = "darkred",
                                             guide="colorbar", name="No. of Troop-\nContributing Countries",
                                             breaks=c(0,1,2,3,4),
                                             limits=c(0,4))
                    } +
-                   {if (max(max_no_tcc$No.TCC) > 4)
+                   {if (max(anim_max_no_tcc$no.tcc) > 4)
                      scale_color_continuous(low = "thistle3", high = "darkred",
                                             guide="colorbar", name="No. of Troop-\nContributing Countries",
                                             breaks=pretty_breaks()
@@ -1012,13 +1036,13 @@ server <- function(input, output, session){
             legend.direction = "horizontal",
             legend.box="vertical",
             legend.position = "bottom",
-            legend.text = element_text(size=4))+
-      transition_states(states=anim_df()$timepoint)+
+            legend.text = element_text(size=2))+
+      transition_states(states=anim_df()$timepoint, transition_length = 3)+
       labs(title=paste0(mission_name,": ", "{closest_state}"),
-           caption="Sources: Geo-PKO v2.0\n")+
+           caption="Source: Geo-PKO v2.0\n")+
       ease_aes('linear')
     
-    anim_save("outfile.gif", animate(anim_p, fps = 4, width=650, height=500, res=120))
+    anim_save("outfile.gif", animate(anim_p, fps = 5, width=700, height=550, res=130))
     
     list(src="outfile.gif",
          contentType='image/gif'
@@ -1045,7 +1069,7 @@ server <- function(input, output, session){
   ####lollipop####
   lollipop_df <- reactive({
     req(input$Lollipop_map)
-    Years %>% filter(Mission %in% input$Lollipop_map) %>% 
+    Years %>% filter(mission %in% input$Lollipop_map) %>% 
       mutate_at(vars(c(start_date, end_date)), as.numeric)
   })
   
@@ -1077,7 +1101,7 @@ server <- function(input, output, session){
       ) +
       xlab("Years") +
       ylab("")+ #title already mentions locations, so no need for name
-      labs(title=paste0(lollipop_df()$Mission,": ", lollipop_df()$start_date, "-",lollipop_df()$end_date), 
+      labs(title=paste0(lollipop_df()$mission,": ", lollipop_df()$start_date, "-",lollipop_df()$end_date), 
            caption="Data: Geo-PKO v2.0")
     lolli
   }, height=height_lollipop)
