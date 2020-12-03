@@ -1,0 +1,32 @@
+{
+    "id": "39ECC25A",
+    "path": null,
+    "project_path": null,
+    "type": "r_dataframe",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1606925949709.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "expression": "TTmapData",
+        "caption": "TTmapData",
+        "totalObservations": 17718,
+        "displayedObservations": 17718,
+        "variables": 18,
+        "cacheKey": "F71F3784",
+        "object": "TTmapData",
+        "environment": "",
+        "contentUrl": "grid_resource/gridviewer.html?env=&obj=TTmapData&cache_key=F71F3784&max_cols=50",
+        "preview": 0
+    },
+    "folds": "",
+    "lastKnownWriteTime": 16044352849969217,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1606925949709,
+    "read_only": false,
+    "read_only_alternatives": []
+}

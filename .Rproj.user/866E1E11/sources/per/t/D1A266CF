@@ -1,0 +1,25 @@
+{
+    "id": "D1A266CF",
+    "path": "~/DPCR/GeoPKO/GeoPKO-Shiny-v2.0/GeoPKODashboard/testscript3.R",
+    "project_path": "testscript3.R",
+    "type": "r_source",
+    "hash": "3513260274",
+    "contents": "",
+    "dirty": false,
+    "created": 1606934584247.0,
+    "source_on_save": false,
+    "relative_order": 5,
+    "properties": {
+        "cursorPosition": "48,13",
+        "scrollLine": "34",
+        "tempName": "Untitled3"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1606945181,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1606945181106,
+    "read_only": false,
+    "read_only_alternatives": []
+}
