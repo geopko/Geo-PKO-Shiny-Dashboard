@@ -3,13 +3,12 @@
 
 if(!require(magrittr)) install.packages("magrittr", repos = "http://cran.us.r-project.org")
 if(!require(rvest)) install.packages("rvest", repos = "http://cran.us.r-project.org")
-#if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
+if(!require(readxl)) install.packages("readxl", repos = "http://cran.us.r-project.org")
 if(!require(dplyr)) install.packages("dplyr", repos = "http://cran.us.r-project.org")
 if(!require(readr)) install.packages("maps", repos = "http://cran.us.r-project.org")
 library(ggplot2)
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
 if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
-#if(!require(plotly)) install.packages("plotly", repos = "http://cran.us.r-project.org")
 #if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
 if(!require(shiny)) install.packages("shiny", repos = "http://cran.us.r-project.org")
 if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = "http://cran.us.r-project.org")
@@ -24,7 +23,6 @@ if(!require(GADMTools)) install.packages("GADMTools")
 if(!require(Cairo)) install.packages("Cairo")
 if(!require(ggrepel)) install.packages("ggrepel")
 if(!require(forcats)) install.packages("forcats")
-if(!require(sp)) install.packages("sp")
 if(!require(gifski)) install.packages("gifski")
 if(!require(png)) install.packages("png")
 if(!require(gganimate)) install.packages("gganimate")
@@ -41,9 +39,7 @@ options(shiny.usecairo=TRUE)
 
 ####import data####
 
-geopko <- readr::read_csv("Geo_PKO_v2.0_ISO3.csv", col_types = cols(.default="c"),
-                          )
-
+geopko <- readr::read_csv("Geo_PKO_v2.0_ISO3.csv", col_types = cols(.default="c"))
 #geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
 #Rmd pages
@@ -133,20 +129,6 @@ FrontmapData <- readxl::read_xlsx("FrontMap.xlsx", col_types="text")
 FrontmapData <- FrontmapData %>% 
   mutate_at(vars(latitude:ave.no.troops), as.numeric)
 
-# FrontmapData <- geopko2 %>% 
-#   select(Mission, year, country, location, 
-#          latitude, longitude, Infantry, 
-#          NoTroops, Reserve, HQ, UNPOL, Med, Av, UNMO) %>%
-#   group_by(Mission, year, location, country) %>% 
-#   mutate(Av = max(Av, na.rm=TRUE), 
-#          Med = max(Med, na.rm=TRUE),
-#          Infantry = as.integer(mean(Infantry, na.rm=TRUE)),
-#          Reserve = as.integer(mean(Reserve, na.rm=TRUE)),
-#          UNPOL = max(UNPOL, na.rm=TRUE),
-#          UNMO = max(UNMO, na.rm=TRUE),
-#          ave.no.troops = as.integer(mean(NoTroops, na.rm=TRUE))) %>% 
-#   distinct() 
-
 ####Oxford comma mission text front page####
 mission_comma <-function(w, oxford=T) {
   paste0(paste(w[-length(w)], collapse=", "), 
@@ -157,32 +139,10 @@ mission_comma <-function(w, oxford=T) {
 TCCmapData <- readxl::read_xlsx("TCCMap.xlsx", col_types="text")
 TCCmapData %>% mutate_at(vars(longitude, latitude, No.TCC), as.numeric) -> TCCmapData
 
- 
-# TCCmapData<-geopko2 %>% select(Source:location, latitude, longitude,
-#                                No.TCC:notroopspertcc_17, HQ) %>% 
-#   pivot_longer(nameoftcc_1:notroopspertcc_17,
-#                names_to=c(".value", "TCC_id"),
-#                names_sep="_") %>%
-#   filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
-#   mutate_at(vars(notroopspertcc), as.numeric) %>%
-#   group_by(Mission, year, location, latitude, longitude, nameoftcc) %>%
-#   summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
-#   mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
-#          single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
-#   add_count(year, location, name="No.TCC")%>%
-#   group_by(Mission, year, location, latitude, longitude, No.TCC) %>%
-#   summarise(year.overview = str_c(single.tcc, collapse=", "))
-
 ##Troop Type Dataframe (third map)
 TTmapData <- readxl::read_xlsx("TTMap.xlsx", col_types="text")
 TTmapData <- TTmapData %>% 
   mutate_at(vars(latitude:trans), as.numeric)
-# TTmapData <- geopko2 %>% 
-#   select(source:location, latitude, longitude, Infantry,eng:mp) %>%
-#   group_by(mission, year, location)%>% 
-#   mutate(Infantry = as.integer(mean(Infantry, na.rm=TRUE)))%>% 
-#   distinct()%>%
-#   drop_na(Infantry)
 
 ###Legend colours
 ColoursFrontmap <- colorBin(rev(viridis::viridis(10)), FrontmapData$ave.no.troops, bins = c(10,50,100,500,1000,2000,4000,6000,8000))
@@ -271,11 +231,6 @@ map_df %>% group_by(mission, timepoint) %>% summarise(total= sum(no.troops, na.r
 
 intersect(anim_choice_list1, anim_choice_list2) -> anim_choice_list
 
-#colnames(tcc_df) <- sub("name.of.TCC", "nameofTCC_", colnames(tcc_df)) obsolete script
-#colnames(tcc_df) <- sub("No.troops.per.TCC", "notroopsperTCC_", colnames(tcc_df))
-#tcc_df <- tcc_df %>% mutate_at(vars(starts_with("notroopsperTCC")), as.character) %>% 
-#  mutate_at(vars(starts_with("nameofTCC")), as.character) %>% 
-
 ####lollipop data prep####
 
 Years <- geopko
@@ -352,12 +307,13 @@ ui <- fluidPage(
                                                                         options = list(`actions-box` = TRUE),multiple = T), width = 3),
                                                mainPanel ( tags$style(type = "text/css", "#TroopTypeMap {height: calc(100vh - 130px) !important;}"), leafletOutput("TroopTypeMap", width = "115%")),####Screen size, responsive to different types
                                                position = c("left", "right")))),
+             tags$head(tags$style(".leaflet-top {z-index:999!important;}")),
              navbarMenu("The Map Generator",
                         tabPanel("Deployment Maps (Static)", fluid=TRUE,
                                  titlePanel("Deployment Maps"),
                                  sidebarLayout(
                                    sidebarPanel(width=3, 
-                                                p("Where are UN peacekeepers posted, and how many? Select the options below to visualise."),
+                                                p("Where are UN peacekeepers posted, and what are their strengths and capabilities? Select the options below to visualise deployment patterns."),
                                                 selectInput(inputId="mission_map", label="Select a mission",
                                                             choices=levels(factor(map_df$mission)), 
                                                             width=150, selected="MINUSMA", multiple=F),
@@ -374,7 +330,7 @@ ui <- fluidPage(
                                                 checkboxInput(inputId="UNPOL_map", 
                                                               "UNPOL", value=FALSE),
                                                 #actionButton("dostaticmap", "Generate map"),
-                                                helpText("Errors may occur when a selected feature is not available for a map. If that happens, please deselect the option to redraw the map.")
+                                                helpText("Maps may not offer all of the above features. If errors occur, please deselect the option to redraw the map.")
                                    ),
                                    mainPanel(
                                      withSpinner(plotOutput("depmap", height="auto")),
@@ -392,19 +348,13 @@ ui <- fluidPage(
                                  titlePanel("Animated Maps"),
                                  sidebarLayout(
                                    sidebarPanel(width=3, 
-                                                p("Animated maps show changes over time. Select a mission and click on the button below to explore."),
+                                                p("Animated maps are always cool, and in this case they show how deployment patterns change over time for each mission. Select a mission and click on the button below to explore."),
                                                 selectInput(inputId="anim_map", label="Mission",
                                                             choices=anim_choice_list, width=200, selected=NULL),
                                                 actionButton("go_anim", "Animated!"),
+                                                p(""),
                                                 tags$div("This tool relies on the package",tags$em("gganimate."),"Rendering may take time as it entails producing and combining multiple frames. For the best effect, only missions with more than five source maps are available to select here.")
                                    ),
-                                   # sliderInput(inputId="anim_timeslider", 
-                                   #             label= "Select deployment period", 
-                                   #             value= c(x,y), 
-                                   #             min= x,
-                                   #             max= y
-                                   #         )
-                                   
                                    mainPanel(fluid=TRUE, 
                                              withSpinner(imageOutput("animated")))))),
              ####TCC Table UI####
@@ -685,12 +635,6 @@ server <- function(input, output, session){
   output$basecountries <- renderText({
     unique_country <- unique(map_df_temp()$country)
     country_list(unique_country)
-    
-    # if(length(countrieslist)<=2){
-    # paste0("This mission took place in: ",paste0(unique(map_df_temp()$country), collapse=" and "),".")}
-    # else{
-    #   paste0("This mission took place in ",paste0(unique(map_df_temp()$country), collapse=" and "),".")  
-    # }
   })
   
   
@@ -731,19 +675,18 @@ server <- function(input, output, session){
   
   output$depmap <- renderPlot({
     
-    #    input$depsize_map
     req(input$mission_map)
     req(input$timepoint_map)
-    # input$MHQ_map
-    # input$SHQ_map
-    # input$MO_map
-    # input$UNPOL_map
+    input$MHQ_map
+    input$SHQ_map
+    input$MO_map
+    input$UNPOL_map
     
     mapshapefiles <- gadm_sf_loadCountries(c(maplist()), level=1)
     
     max_no_tcc <- map_df_temp() %>% mutate(no.tcc=ifelse(is.na(no.tcc), 0, no.tcc))
     
-    p <- ggplot() + geom_sf(data=mapshapefiles$sf, fill="grey80") + 
+    p <- ggplot() + geom_sf(data=mapshapefiles$sf, fill="grey92") + 
       theme_void() + 
       labs(title=paste(map_df_temp()$mission,": ", map_df_temp()$timepoint),
            caption="Source: Geo-PKO v2.0\n")+
@@ -815,6 +758,7 @@ server <- function(input, output, session){
                                                    guide="colorbar", name="No. of Troop-\nContributing Countries",
                                                    breaks=pretty_breaks()
                             )}
+      
     }
     
     p <- p +
@@ -911,8 +855,7 @@ server <- function(input, output, session){
         mutate(across(everything(), as.character)) %>% 
         pivot_longer(5:23, names_to="trooptypes", values_to="binary") %>% 
         filter(binary==1) %>% 
-        mutate(trooptypes=case_when(trooptypes == "others" ~ "Others",
-                                    trooptypes == "sf" ~ "Special Forces", 
+        mutate(trooptypes=case_when(trooptypes == "sf" ~ "Special Forces", 
                                     trooptypes == "inf" ~ "Infantry",
                                     trooptypes == "he.sup" ~ "Helicopter Support", 
                                     trooptypes == "avia" ~ "Aviation",
@@ -925,12 +868,35 @@ server <- function(input, output, session){
                                     trooptypes == "fpu" ~ "Formed Police Unit", 
                                     trooptypes == "fp" ~ "Force Protection", 
                                     trooptypes == "riv" ~ "Riverine",
+                                    trooptypes == "sig" ~ "Signal",
+                                    trooptypes == "trans" ~ "Transport",
+                                    trooptypes == "other.type" ~ "Others",
                                     trooptypes == "eng" ~ "Engineer", 
+                                    trooptypes == "rpf" ~ "Regional Protection Force",
+                                    trooptypes == "demining" ~ "Demining", 
                                     TRUE ~ as.character(trooptypes))) %>% 
         group_by(ID, location, no.troops, no.tcc) %>% 
         summarize(Troop.Compo = str_c(trooptypes, collapse=", ")) %>% ungroup() %>% 
-        mutate(no.tcc=ifelse(is.na(no.tcc), "Unknown", no.tcc)) %>% 
-        select(-ID)}
+        mutate(no.tcc=ifelse(is.na(no.tcc), "Unknown", no.tcc),
+               no.troops=ifelse(is.na(no.troops), "Unknown", no.troops)) %>% 
+        select(-ID) -> details1
+      
+      map_df_temp() %>% tibble::rowid_to_column("ID") %>% 
+        select(ID, location, no.troops, no.tcc, rpf:uav, other.type, -rpf.no,
+               -inf.no, -fpu.no, -res.no, -fp.no) %>% 
+        mutate(across(everything(), as.character)) %>% 
+        pivot_longer(5:23, names_to="trooptypes", values_to="binary") %>% 
+        filter(binary!=1) %>% 
+        group_by(ID, location, no.troops, no.tcc) %>% 
+        summarize(Troop.Compo = "Data on troop types not available for this location") %>% 
+        ungroup() %>% 
+        mutate(no.tcc=ifelse(is.na(no.tcc), "Unknown", no.tcc),
+               no.troops=ifelse(is.na(no.troops), "Unknown", no.troops)) %>% 
+        select(-ID) -> details2
+      
+      rbind(details1, details2)
+      
+      }
     else {
       map_df_temp() %>% 
         select(location, no.troops, no.tcc) %>% 
@@ -974,7 +940,7 @@ server <- function(input, output, session){
     getPalette = colorRampPalette(brewer.pal(9, "Set1"))
     
     
-    anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf, fill="grey80") + 
+    anim_p <- ggplot() + geom_sf(data=anim_mapshapefiles$sf, fill="grey92") + 
       theme_void() + 
       geom_blank()+
       geom_point(data=anim_df(), 
@@ -1036,35 +1002,20 @@ server <- function(input, output, session){
             legend.direction = "horizontal",
             legend.box="vertical",
             legend.position = "bottom",
-            legend.text = element_text(size=2))+
+            legend.text = element_text(size=7),
+            legend.title = element_text(size=7))+
       transition_states(states=anim_df()$timepoint, transition_length = 3)+
       labs(title=paste0(mission_name,": ", "{closest_state}"),
            caption="Source: Geo-PKO v2.0\n")+
-      ease_aes('linear')
+      enter_fade()+
+      exit_fade()
+ #     ease_aes('linear')
     
-    anim_save("outfile.gif", animate(anim_p, fps = 5, width=700, height=550, res=130))
+    anim_save("outfile.gif", animate(anim_p, fps = 5, width=700, height=700, res=150))
     
     list(src="outfile.gif",
          contentType='image/gif'
     )}, deleteFile= TRUE)
-  
-  
-  # observeEvent(input$anim_map,{
-  #   anim_temp <- map_df %>% filter(Mission %in% input$anim_map)
-  #   
-  #   updateSliderInput(session, 'anim_timepoint',
-  #                     min = as.Date(min(anim_temp$slider_time), "%Y-%B"),
-  #                     max = as.Date(max(anim_temp$slider_time), "%Y-%B"))
-  #   
-  # }) reserve for time input
-  
-  # map_df_temp <- reactive({
-  #   req(input$mission_map)
-  #   req(input$timepoint_map)
-  #   map_df %>% filter(Mission %in% input$mission_map) %>%
-  #     filter(timepoint %in% input$timepoint_map)
-  #   
-  # })
   
   ####lollipop####
   lollipop_df <- reactive({
