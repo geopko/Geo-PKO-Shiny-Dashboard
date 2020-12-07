@@ -112,9 +112,9 @@ TTmapData <- geopko2 %>%
 write_excel_csv(TTmapData, "TTMap.csv")
 
 library(readxl)
+library(readr)
+geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
-geopko2 <- readxl::read_xlsx("Geo_PKO_20201113_completed.xlsx", col_types="text")
+write_excel_csv(geopko2, "Geo_PKO_v.2.0.csv")
 
-write_excel_csv(geopko2, "test.csv")
-
-geopko3 <- readr::read_csv("test.csv")
+geopko3 <- readr::read_csv("Geo_PKO_v.2.0.csv")
