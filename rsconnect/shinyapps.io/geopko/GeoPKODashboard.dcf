@@ -1,0 +1,13 @@
+name: geopkodashboard
+title: GeoPKODashboard
+username:
+account: geopko
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3368088
+bundleId: 3957463
+url: https://geopko.shinyapps.io/GeoPKODashboard/
+when: 1607382267.53632
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: CAF_adm1.sf.rds|data_wrangling.R|MLI_adm1.sf.rds|TCD_adm1.sf.rds|Script-test/testscript.R|Script-test/testscript2.R|Script-test/testscript3.R

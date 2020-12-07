@@ -35,9 +35,9 @@ library(knitr)
 library(htmltools)
 library(shinyBS)
 library(waiter)
-library(shinyjs)
+#if(!require(countrycode)) install.packages("countrycode")
 
-options(shiny.usecairo=TRUE, shiny.sanitize.errors=FALSE)
+options(shiny.usecairo=TRUE)
 
 ####import data####
 
@@ -138,11 +138,11 @@ mission_comma <-function(w, oxford=T) {
          ifelse(oxford,",","")," and ", w[length(w)] )}
 
 
-####TCC dataframe (second map)####
+###TCC dataframe (second map)
 TCCmapData <- readxl::read_xlsx("TCCMap.xlsx", col_types="text")
 TCCmapData %>% mutate_at(vars(longitude, latitude, No.TCC), as.numeric) -> TCCmapData
 
-####Troop Type Dataframe (third map)####
+##Troop Type Dataframe (third map)
 TTmapData <- readxl::read_xlsx("TTMap.xlsx", col_types="text")
 TTmapData <- TTmapData %>% 
   mutate_at(vars(latitude:trans), as.numeric)
@@ -153,100 +153,100 @@ ColoursFrontmapReserve <- colorBin(rev(viridis::viridis(10)), FrontmapData$Reser
 ColoursTCCmap <- colorBin((viridis::viridis(2)), TCCmapData$No.TCC, bins = c(1,2,4,7,10,15,20))
 ColoursTTmap <- colorBin(rev(viridis::viridis(10)), TTmapData$Infantry, bins = c(10,50,100,500,1000,2000,4000,8000))
 
-####Set basemaps for leaflet tabs####
+##Set basemaps for leaflet tabs
 #Map with panel above
-basemapFront <-leaflet(geopko, options = leafletOptions(minZoom = 2)) %>%
-  addTiles() %>%
+basemapFront <-leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
+  addTiles() %>% 
   addLayersControl(
     position = "bottomright",
     baseGroups = c("Deployments (All)", "Troops (Infantry)","Troops (Reserve)","Mission Site (No Troops)","None"),
     overlayGroups = c("UNPOL", "UNMO", "Mission HQs"),
-    options = layersControlOptions(collapsed = FALSE)) %>%
+    options = layersControlOptions(collapsed = FALSE)) %>% 
   hideGroup(c("UNPOL", "UNMO", "Mission HQs"))  %>%
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursFrontmap, values = ~FrontmapData$ave.no.troops, group = "Troop deployment", title= "Number of troops")%>%
-  addCircleMarkers(data = (FrontmapDataTroop<-FrontmapData%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)",
+  addCircleMarkers(data = (FrontmapDataTroop<-FrontmapData%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
                    label=paste("<strong>", FrontmapDataTroop$mission,"<br/>Location:</strong>",FrontmapDataTroop$location,"<br/><strong>Troop number:</strong>", FrontmapDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapDataMissionSite<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3,
-                   fillOpacity = 0.4, color = "#666666", group = "Deployments (All)",
+  addCircleMarkers(data = (FrontmapDataMissionSite<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
+                   fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
                    label=paste("<strong>", FrontmapDataMissionSite$mission,"<br/>Location:</strong>",FrontmapDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapDataInfantry<-FrontmapData%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)",
+  addCircleMarkers(data = (FrontmapDataInfantry<-FrontmapData%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
                    label=paste("<strong>", FrontmapDataInfantry$mission,"<br/>Location:</strong>",FrontmapDataInfantry$location,"<br/><strong>Troop number:</strong>", FrontmapDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapDataMissionSiteOnly<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3,
-                   fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)",
+  addCircleMarkers(data = (FrontmapDataMissionSiteOnly<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
+                   fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
                    label=paste("<strong>", FrontmapDataMissionSiteOnly$mission,"<br/>Location:</strong>",FrontmapDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapDataReserve<-FrontmapData%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)",
+  addCircleMarkers(data = (FrontmapDataReserve<-FrontmapData%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
                    label=paste("<strong>", FrontmapDataReserve$mission,"<br/>Location:</strong>",FrontmapDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", FrontmapDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
-  addAwesomeMarkers(data = (FrontmapDataUNPOL<-FrontmapData%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL",
+  addAwesomeMarkers(data = (FrontmapDataUNPOL<-FrontmapData%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
                     label=paste("<strong>UNPOL</strong><br/>",FrontmapDataUNPOL$location,"-",FrontmapDataUNPOL$mission)%>% lapply(htmltools::HTML)) %>%
-  addAwesomeMarkers(data = (FrontmapDataUNMO<-FrontmapData%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO",
+  addAwesomeMarkers(data = (FrontmapDataUNMO<-FrontmapData%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
                     label=paste("<strong>UNMO</strong><br/>",FrontmapDataUNMO$location,"-",FrontmapDataUNMO$mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (FrontmapDataHQ<-FrontmapData%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs",
+  addAwesomeMarkers(data = (FrontmapDataHQ<-FrontmapData%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
                     label=paste("<strong>Mission HQ</strong><br/>",FrontmapDataHQ$location,"-",FrontmapDataHQ$mission)%>% lapply(htmltools::HTML))
 
-# #Map with absolute panel
-basemapFront_abso <-leaflet(geopko, options = leafletOptions(minZoom = 2)) %>%
-  addTiles() %>%
+#Map with absolute panel
+basemapFront_abso <-leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
+  addTiles() %>% 
   addLayersControl(
     position = "bottomright",
     baseGroups = c("Deployments (All)", "Troops (Infantry)","Troops (Reserve)","Mission Site (No Troops)","None"),
     overlayGroups = c("UNPOL", "UNMO", "Mission HQs"),
-    options = layersControlOptions(collapsed = FALSE)) %>%
+    options = layersControlOptions(collapsed = FALSE)) %>% 
   hideGroup(c("UNPOL", "UNMO", "Mission HQs"))  %>%
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursFrontmap, values = ~FrontmapData_abso$ave.no.troops, group = "Troop deployment", title= "Number of troops")%>%
-  addCircleMarkers(data = (FrontmapData_abso_Troop<-FrontmapData_abso%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)",
+  addCircleMarkers(data = (FrontmapData_abso_Troop<-FrontmapData_abso%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
                    label=paste("<strong>", FrontmapData_abso_Troop$mission,"<br/>Location:</strong>",FrontmapData_abso_Troop$location,"<br/><strong>Troop number:</strong>", FrontmapData_abso_Troop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapData_abso_MissionSite<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3,
-                   fillOpacity = 0.4, color = "#666666", group = "Deployments (All)",
+  addCircleMarkers(data = (FrontmapData_abso_MissionSite<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
+                   fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
                    label=paste("<strong>", FrontmapData_abso_MissionSite$mission,"<br/>Location:</strong>",FrontmapData_abso_MissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapData_abso_Infantry<-FrontmapData_abso%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)",
+  addCircleMarkers(data = (FrontmapData_abso_Infantry<-FrontmapData_abso%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
                    label=paste("<strong>", FrontmapData_abso_Infantry$mission,"<br/>Location:</strong>",FrontmapData_abso_Infantry$location,"<br/><strong>Troop number:</strong>", FrontmapData_abso_Infantry$Infantry)%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapData_abso_MissionSiteOnly<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3,
-                   fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)",
+  addCircleMarkers(data = (FrontmapData_abso_MissionSiteOnly<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
+                   fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
                    label=paste("<strong>", FrontmapData_abso_MissionSiteOnly$mission,"<br/>Location:</strong>",FrontmapData_abso_MissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  addCircleMarkers(data = (FrontmapData_abso_Reserve<-FrontmapData_abso%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)",
+  addCircleMarkers(data = (FrontmapData_abso_Reserve<-FrontmapData_abso%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
                    label=paste("<strong>", FrontmapData_abso_Reserve$mission,"<br/>Location:</strong>",FrontmapData_abso_Reserve$location,"<br/><strong>Reserve Troop number:</strong>", FrontmapData_abso_Reserve$Reserve)%>% lapply(htmltools::HTML)) %>%
-  addAwesomeMarkers(data = (FrontmapData_abso_UNPOL<-FrontmapData_abso%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL",
+  addAwesomeMarkers(data = (FrontmapData_abso_UNPOL<-FrontmapData_abso%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
                     label=paste("<strong>UNPOL</strong><br/>",FrontmapData_abso_UNPOL$location,"-",FrontmapData_abso_UNPOL$mission)%>% lapply(htmltools::HTML)) %>%
-  addAwesomeMarkers(data = (FrontmapData_abso_UNMO<-FrontmapData_abso%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO",
+  addAwesomeMarkers(data = (FrontmapData_abso_UNMO<-FrontmapData_abso%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
                     label=paste("<strong>UNMO</strong><br/>",FrontmapData_abso_UNMO$location,"-",FrontmapData_abso_UNMO$mission)%>% lapply(htmltools::HTML))%>%
-  addAwesomeMarkers(data = (FrontmapData_abso_HQ<-FrontmapData_abso%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs",
+  addAwesomeMarkers(data = (FrontmapData_abso_HQ<-FrontmapData_abso%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
                     label=paste("<strong>Mission HQ</strong><br/>",FrontmapData_abso_HQ$location,"-",FrontmapData_abso_HQ$mission)%>% lapply(htmltools::HTML))
 
 
-
-# ####Map doesnt load on initial go, Map 2 base here
-TCC_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>%
-  addTiles()  %>%
+  
+####Map doesnt load on initial go, Map 2 base here
+TCC_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
+  addTiles()  %>% 
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTCCmap, values = ~TCCmapData$No.TCC, group = "TCC", title= "Number of TCCs") %>%
-  addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC),
+  addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
                      "width"= "150px", "white-space"="normal")),
                    label = paste("<strong>", TCCmapData2019$mission,"</strong><br/><strong>Location:</strong>",TCCmapData2019$location,
                                  "<br/><strong>Total number of TCCs:</strong>",TCCmapData2019$No.TCC, "<br/><strong>Countries:</strong>",
                                  TCCmapData2019$year.overview)%>% lapply(htmltools::HTML))
 
-# ####BaseMap third map
-TroopType_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>%
-  addTiles() %>%
+####BaseMap third map 
+TroopType_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>% 
+  addTiles() %>% 
   addLayersControl(
     position = "bottomright",
     baseGroups = c("Infantry", "None"),
     overlayGroups = c("Medical", "Engineering", "Signals", "Aviation", "Transport", "Maintenance", "Riverine"),
-    options = layersControlOptions(collapsed = FALSE)) %>%
+    options = layersControlOptions(collapsed = FALSE)) %>% 
   hideGroup(c("Medical","Aviation", "Engineering", "Transport", "Signals","Maintenance","Riverine"))%>%
   fitBounds(~-70,-50,~60,60) %>%
   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
-  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5),
-                   fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry",
+  addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
+                   fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
                    label = paste("<strong>", TTmapDataInf$mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
   addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
                     label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$mission)%>% lapply(htmltools::HTML))%>%
@@ -306,94 +306,80 @@ ui <- bootstrapPage(
                         tabPanel("Overview",
                                  use_waiter(), 
                                  waiter_show_on_load(html = spin_fading_circles()),
-                                 tags$head(tags$script('
-                                var dimension = [0, 0];
-                                $(document).on("shiny:connected", function(e) {
-                                    dimension[0] = window.innerWidth;
-                                    dimension[1] = window.innerHeight;
-                                    Shiny.onInputChange("dimension", dimension);
-                                });
-                                $(window).resize(function(e) {
-                                    dimension[0] = window.innerWidth;
-                                    dimension[1] = window.innerHeight;
-                                    Shiny.onInputChange("dimension", dimension);
-                                });
-                            ')),
-                                 conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650",
-                                                  div(column(width = 4,
-                                                             h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
+                                   conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650",
+                                   column(width = 4,
+                                          h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
                                              progress reports. 'Mission Site' indicates where there are no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer).")),
-                                                      column(width=2,style='padding:0px;', #So there is more space around the text horizontally
-                                                             span(h5(tags$b(textOutput("reactive_year"), align = "left"), style="color:#15110d"),
-                                                                  span(h6(textOutput("reactive_troopcount"), align = "left"), style="color:#15110d"),
-                                                                  span(h6(textOutput("reactive_UNPOLcount"), align = "left"), style="color:#666666"),
-                                                                  span(h6(textOutput("reactive_UNMOcount"), align = "left"), style="color:#666666"))),
-                                                      column(width = 3,
-                                                             sliderInput(inputId = "YearFront", 
-                                                                         label = "Select deployment year",
-                                                                         min = 1994,
-                                                                         max = 2019,
-                                                                         value =2019,
-                                                                         step = 1,
-                                                                         sep= "",
-                                                                         width = "100%",
-                                                                         animate = animationOptions(interval = 2000, loop = TRUE)),
-                                                             chooseSliderSkin("Shiny", color = "transparent"),
-                                                             setSliderColor("transparent", 1),
-                                                             tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
-                                                      ), 
-                                                      column(width = 3,
-                                                             pickerInput("missionsFront","Select mission(s)", 
-                                                                         choices=as.character(unique(FrontmapData$mission)),
-                                                                         selected =as.character(unique(FrontmapData$mission)), 
-                                                                         options = list(`actions-box` = TRUE,size=5),multiple = T),
-                                                             span(h6(textOutput("reactive_yearMissions"), align = "left"), style="color:#666666"),
-                                                             style='padding:8px;')
-                                                  )),
-                                 conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650", 
-                                                  div(class="outer", 
-                                                      tags$style(type = "text/css", "#basemap {height: calc(100vh - 110px) !important;}"), 
-                                                      leafletOutput("basemap"))
+                                   column(width=2,style='padding:0px;', #So there is more space around the text horizontally
+                                          span(h5(tags$b(textOutput("reactive_year"), align = "left"), style="color:#15110d"),
+                                            span(h6(textOutput("reactive_troopcount"), align = "left"), style="color:#15110d"),
+                                            span(h6(textOutput("reactive_UNPOLcount"), align = "left"), style="color:#666666"),
+                                            span(h6(textOutput("reactive_UNMOcount"), align = "left"), style="color:#666666"))),
+                                   column(width = 3,
+                                          sliderInput(inputId = "YearFront", 
+                                                        label = "Select deployment year",
+                                                        min = 1994,
+                                                        max = 2019,
+                                                        value =2019,
+                                                        step = 1,
+                                                        sep= "",
+                                                        width = "100%",
+                                                        animate = animationOptions(interval = 2000, loop = TRUE)),
+                                          chooseSliderSkin("Shiny", color = "transparent"),
+                                          setSliderColor("transparent", 1),
+                                          tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
+                                   ), 
+                                   column(width = 3,
+                                          pickerInput("missionsFront","Select mission(s)", 
+                                                        choices=as.character(unique(FrontmapData$mission)),
+                                                        selected =as.character(unique(FrontmapData$mission)), 
+                                                        options = list(`actions-box` = TRUE,size=5),multiple = T),
+                                            span(h6(textOutput("reactive_yearMissions"), align = "left"), style="color:#666666"),
+                                          style='padding:8px;')
+                                   ),
+                        conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650", div(class="outer", 
+                                     tags$style(type = "text/css", "#basemap {height: calc(100vh - 110px) !important;}"), 
+                                     leafletOutput("basemap"))
                                  ),
+                        conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
+                                         div(class="outer", tags$style(type = "text/css", "#basemap_abso {height: calc(100vh - 110px) !important;}"), 
+                                                  leafletOutput("basemap_abso"))
+                        ),
                                  conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
-                                                  div(class="outer", tags$style(type = "text/css", "#basemap_abso {height: calc(100vh - 110px) !important;}"), 
-                                                      leafletOutput("basemap_abso")
-                                                  )),
-                                 conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650",
-                                                  div(absolutePanel(class = "panel panel-default", top = 70, left = 85, width=270, 
-                                                                    height = "auto",fixed = TRUE, 
-                                                                    style = "padding: 12px; background:rgba(232, 232, 232, 0.8);bottom:25px",
-                                                                    h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
+                                                  absolutePanel(class = "panel panel-default", top = 70, left = 85, width=270, 
+                                                                height = "auto",fixed = TRUE, 
+                                                                style = "padding: 12px; background:rgba(232, 232, 232, 0.8);bottom:25px",
+                                                                h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
                                              progress reports. 'Mission Site' indicates where there are no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer)."),
-                                                                    span(h5(tags$b(textOutput("reactive_year_absoPanel"), align = "left"), style="color:#15110d")),
-                                                                    span(h6(textOutput("reactive_troopcount_absoPanel"), align = "left"), style="color:#15110d"),
-                                                                    span(h6(textOutput("reactive_UNPOLcount_absoPanel"), align = "left"), style="color:#666666"),
-                                                                    span(h6(textOutput("reactive_UNMOcount_absoPanel"), align = "left"), style="color:#666666"),
-                                                                    br(),
-                                                                    sliderInput(inputId = "YearFront_abso", 
-                                                                                label = "Select deployment year",
-                                                                                min = 1994,
-                                                                                max = 2019,
-                                                                                value =2019,
-                                                                                step = 1,
-                                                                                sep= "",
-                                                                                width = "100%",
-                                                                                animate = animationOptions(interval = 2000, loop = TRUE)),
-                                                                    chooseSliderSkin("Shiny", color = "transparent"),
-                                                                    setSliderColor("transparent", 1),
-                                                                    pickerInput("missionsFront_abso","Select mission(s)", 
-                                                                                choices=as.character(unique(FrontmapData_abso$mission)),
-                                                                                selected =as.character(unique(FrontmapData_abso$mission)), 
-                                                                                options = list(`actions-box` = TRUE,size=5),multiple = T),
-                                                                    span(h6(textOutput("reactive_yearMissions_absoPanel"), align = "left"), style="color:#666666"),
-                                                                    tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
-                                                  )))),
+                                                                span(h5(tags$b(textOutput("reactive_year_absoPanel"), align = "left"), style="color:#15110d")),
+                                                                span(h6(textOutput("reactive_troopcount_absoPanel"), align = "left"), style="color:#15110d"),
+                                                                span(h6(textOutput("reactive_UNPOLcount_absoPanel"), align = "left"), style="color:#666666"),
+                                                                span(h6(textOutput("reactive_UNMOcount_absoPanel"), align = "left"), style="color:#666666"),
+                                                                br(),
+                                                                sliderInput(inputId = "YearFront_abso", 
+                                                                            label = "Select deployment year",
+                                                                            min = 1994,
+                                                                            max = 2019,
+                                                                            value =2019,
+                                                                            step = 1,
+                                                                            sep= "",
+                                                                            width = "100%",
+                                                                            animate = animationOptions(interval = 2000, loop = TRUE)),
+                                                                chooseSliderSkin("Shiny", color = "transparent"),
+                                                                setSliderColor("transparent", 1),
+                                                                pickerInput("missionsFront_abso","Select mission(s)", 
+                                                                            choices=as.character(unique(FrontmapData_abso$mission)),
+                                                                            selected =as.character(unique(FrontmapData_abso$mission)), 
+                                                                            options = list(`actions-box` = TRUE,size=5),multiple = T),
+                                                                span(h6(textOutput("reactive_yearMissions_absoPanel"), align = "left"), style="color:#666666"),
+                                             tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
+                                             ))),
                         tabPanel("Contributing Countries",
                                  sidebarLayout(sidebarPanel( "This map shows how many troop-contributing countries (TCCs) have deployed peacekeepers to a location. TCCs and the number of troops each country has contributed are shown in the labels.<br/><br/>"%>% lapply(htmltools::HTML),
                                                              chooseSliderSkin("Shiny", color = "transparent"),
@@ -526,7 +512,7 @@ ui <- bootstrapPage(
 
 server <- function(input, output, session){
   
-  Sys.sleep(5) # do something that takes time
+  Sys.sleep(3) # do something that takes time
   waiter_hide()
   
   mission_list <- map_df %>% distinct(mission) %>% arrange(mission)
@@ -572,117 +558,9 @@ server <- function(input, output, session){
       fitBounds(~-70,-50,~60,60) %>%
       addLegend(pal = ColoursFrontmap, values = ~FrontmapData$ave.no.troops, group = "Troop deployment", title= "Number of troops")
   })
-  # ####Set basemaps for leaflet tabs####
-  # 
-  # #Map with panel above
-  # basemapFront <-leaflet(FrontmapData, options = leafletOptions(minZoom = 2)) %>% 
-  #   addTiles() %>% 
-  #   addLayersControl(
-  #     position = "bottomright",
-  #     baseGroups = c("Deployments (All)", "Troops (Infantry)","Troops (Reserve)","Mission Site (No Troops)","None"),
-  #     overlayGroups = c("UNPOL", "UNMO", "Mission HQs"),
-  #     options = layersControlOptions(collapsed = FALSE)) %>% 
-  #   hideGroup(c("UNPOL", "UNMO", "Mission HQs"))  %>%
-  #   fitBounds(~-70,-50,~60,60) %>%
-  #   addLegend(pal = ColoursFrontmap, values = ~FrontmapData$ave.no.troops, group = "Troop deployment", title= "Number of troops")%>%
-  #   addCircleMarkers(data = (FrontmapDataTroop<-FrontmapData%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
-  #                    label=paste("<strong>", FrontmapDataTroop$mission,"<br/>Location:</strong>",FrontmapDataTroop$location,"<br/><strong>Troop number:</strong>", FrontmapDataTroop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapDataMissionSite<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
-  #                    fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
-  #                    label=paste("<strong>", FrontmapDataMissionSite$mission,"<br/>Location:</strong>",FrontmapDataMissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapDataInfantry<-FrontmapData%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
-  #                    label=paste("<strong>", FrontmapDataInfantry$mission,"<br/>Location:</strong>",FrontmapDataInfantry$location,"<br/><strong>Troop number:</strong>", FrontmapDataInfantry$Infantry)%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapDataMissionSiteOnly<-FrontmapData%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
-  #                    fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
-  #                    label=paste("<strong>", FrontmapDataMissionSiteOnly$mission,"<br/>Location:</strong>",FrontmapDataMissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapDataReserve<-FrontmapData%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
-  #                    label=paste("<strong>", FrontmapDataReserve$mission,"<br/>Location:</strong>",FrontmapDataReserve$location,"<br/><strong>Reserve Troop number:</strong>", FrontmapDataReserve$Reserve)%>% lapply(htmltools::HTML)) %>%
-  #   addAwesomeMarkers(data = (FrontmapDataUNPOL<-FrontmapData%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
-  #                     label=paste("<strong>UNPOL</strong><br/>",FrontmapDataUNPOL$location,"-",FrontmapDataUNPOL$mission)%>% lapply(htmltools::HTML)) %>%
-  #   addAwesomeMarkers(data = (FrontmapDataUNMO<-FrontmapData%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
-  #                     label=paste("<strong>UNMO</strong><br/>",FrontmapDataUNMO$location,"-",FrontmapDataUNMO$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (FrontmapDataHQ<-FrontmapData%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
-  #                     label=paste("<strong>Mission HQ</strong><br/>",FrontmapDataHQ$location,"-",FrontmapDataHQ$mission)%>% lapply(htmltools::HTML))
-  # 
-  # #Map with absolute panel
-  # basemapFront_abso <-leaflet(FrontmapData, options = leafletOptions(minZoom = 2)) %>% 
-  #   addTiles() %>% 
-  #   addLayersControl(
-  #     position = "bottomright",
-  #     baseGroups = c("Deployments (All)", "Troops (Infantry)","Troops (Reserve)","Mission Site (No Troops)","None"),
-  #     overlayGroups = c("UNPOL", "UNMO", "Mission HQs"),
-  #     options = layersControlOptions(collapsed = FALSE)) %>% 
-  #   hideGroup(c("UNPOL", "UNMO", "Mission HQs"))  %>%
-  #   fitBounds(~-70,-50,~60,60) %>%
-  #   addLegend(pal = ColoursFrontmap, values = ~FrontmapData_abso$ave.no.troops, group = "Troop deployment", title= "Number of troops")%>%
-  #   addCircleMarkers(data = (FrontmapData_abso_Troop<-FrontmapData_abso%>%filter(ave.no.troops>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmap(ave.no.troops), group = "Deployments (All)", 
-  #                    label=paste("<strong>", FrontmapData_abso_Troop$mission,"<br/>Location:</strong>",FrontmapData_abso_Troop$location,"<br/><strong>Troop number:</strong>", FrontmapData_abso_Troop$ave.no.troops)%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapData_abso_MissionSite<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
-  #                    fillOpacity = 0.4, color = "#666666", group = "Deployments (All)", 
-  #                    label=paste("<strong>", FrontmapData_abso_MissionSite$mission,"<br/>Location:</strong>",FrontmapData_abso_MissionSite$location, "<br/><strong>Mission site</strong> (no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapData_abso_Infantry<-FrontmapData_abso%>%filter(Infantry>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(ave.no.troops)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmap(Infantry), group = "Troops (Infantry)", 
-  #                    label=paste("<strong>", FrontmapData_abso_Infantry$mission,"<br/>Location:</strong>",FrontmapData_abso_Infantry$location,"<br/><strong>Troop number:</strong>", FrontmapData_abso_Infantry$Infantry)%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapData_abso_MissionSiteOnly<-FrontmapData_abso%>%filter(ave.no.troops==0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 0.5, radius = 3, 
-  #                    fillOpacity = 0.4, color = "#666666", group = "Mission Site (No Troops)", 
-  #                    label=paste("<strong>", FrontmapData_abso_MissionSiteOnly$mission,"<br/>Location:</strong>",FrontmapData_abso_MissionSiteOnly$location,"<br/><strong>Mission site </strong>(no troop deployment)")%>% lapply(htmltools::HTML)) %>%
-  #   addCircleMarkers(data = (FrontmapData_abso_Reserve<-FrontmapData_abso%>%filter(Reserve>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Reserve)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursFrontmapReserve(Reserve), group = "Troops (Reserve)", 
-  #                    label=paste("<strong>", FrontmapData_abso_Reserve$mission,"<br/>Location:</strong>",FrontmapData_abso_Reserve$location,"<br/><strong>Reserve Troop number:</strong>", FrontmapData_abso_Reserve$Reserve)%>% lapply(htmltools::HTML)) %>%
-  #   addAwesomeMarkers(data = (FrontmapData_abso_UNPOL<-FrontmapData_abso%>%filter(UNPOL>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude,icon=UNPOLicon, group = "UNPOL", 
-  #                     label=paste("<strong>UNPOL</strong><br/>",FrontmapData_abso_UNPOL$location,"-",FrontmapData_abso_UNPOL$mission)%>% lapply(htmltools::HTML)) %>%
-  #   addAwesomeMarkers(data = (FrontmapData_abso_UNMO<-FrontmapData_abso%>%filter(UNMO>0)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon=UNMOicon, group = "UNMO", 
-  #                     label=paste("<strong>UNMO</strong><br/>",FrontmapData_abso_UNMO$location,"-",FrontmapData_abso_UNMO$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (FrontmapData_abso_HQ<-FrontmapData_abso%>%filter(hq==3)%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, icon = HQicon, group = "Mission HQs", 
-  #                     label=paste("<strong>Mission HQ</strong><br/>",FrontmapData_abso_HQ$location,"-",FrontmapData_abso_HQ$mission)%>% lapply(htmltools::HTML))
-  # 
-  # ####Map doesnt load on initial go, Map 2 base here
-  # TCC_basemap <- leaflet(TCCmapData, options = leafletOptions(minZoom = 2)) %>% 
-  #   addTiles()  %>% 
-  #   fitBounds(~-70,-50,~60,60) %>%
-  #   addLegend(pal = ColoursTCCmap, values = ~TCCmapData$No.TCC, group = "TCC", title= "Number of TCCs") %>%
-  #   addCircleMarkers(data= (TCCmapData2019<-TCCmapData%>%filter(year==2019)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(No.TCC), 
-  #                    fillOpacity = 0.8, color = ~ColoursTCCmap(No.TCC), group = "TCC", labelOptions = labelOptions(style= list(
-  #                      "width"= "150px", "white-space"="normal")),
-  #                    label = paste("<strong>", TCCmapData2019$mission,"</strong><br/><strong>Location:</strong>",TCCmapData2019$location,
-  #                                  "<br/><strong>Total number of TCCs:</strong>",TCCmapData2019$No.TCC, "<br/><strong>Countries:</strong>",
-  #                                  TCCmapData2019$year.overview)%>% lapply(htmltools::HTML))
-  # 
-  # ####BaseMap third map 
-  # TroopType_basemap <- leaflet(TTmapData, options = leafletOptions(minZoom = 2)) %>% 
-  #   addTiles() %>% 
-  #   addLayersControl(
-  #     position = "bottomright",
-  #     baseGroups = c("Infantry", "None"),
-  #     overlayGroups = c("Medical", "Engineering", "Signals", "Aviation", "Transport", "Maintenance", "Riverine"),
-  #     options = layersControlOptions(collapsed = FALSE)) %>% 
-  #   hideGroup(c("Medical","Aviation", "Engineering", "Transport", "Signals","Maintenance","Riverine"))%>%
-  #   fitBounds(~-70,-50,~60,60) %>%
-  #   addLegend(pal = ColoursTTmap, values = ~TTmapData$Infantry, group = "Infantry", title= "Number of troops") %>%
-  #   addCircleMarkers(data=(TTmapDataInf<-TTmapData%>%filter(year==2019)%>%filter(Infantry>0)), lat = ~latitude, lng = ~longitude, weight = 1, radius = ~(Infantry)^(1/3.5), 
-  #                    fillOpacity = 0.6, color = ~ColoursTTmap(Infantry), group = "Infantry", 
-  #                    label = paste("<strong>", TTmapDataInf$mission,"</strong><br/><strong>Location:</strong>",TTmapDataInf$location, "<br/><strong>Troop number:</strong>",TTmapDataInf$Infantry)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataMed<-TTmapData%>%filter(year==2019)%>%filter(med>0)), lat = ~latitude+0.2, lng = ~longitude+0.2, icon = Medicon, group = "Medical",
-  #                     label=paste("<strong>Medical</strong><br/>",TTmapDataMed$location,"-",TTmapDataMed$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataEng<-TTmapData%>%filter(year==2019)%>%filter(eng>0)), lat = ~latitude, lng = ~longitude, icon = Engicon, group = "Engineering",
-  #                     label=paste("<strong>Engineering</strong><br/>", TTmapDataEng$location,"-",TTmapDataEng$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataSig<-TTmapData%>%filter(year==2019)%>%filter(sig>0)), lat = ~latitude-0.2, lng = ~longitude-0.2, icon = Sigicon, group = "Signals",
-  #                     label=paste("<strong>Signal</strong><br/>", TTmapDataSig$location,"-",TTmapDataSig$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataAvia<-TTmapData%>%filter(year==2019)%>%filter(av>0)), lat = ~latitude+0.4, lng = ~longitude+0.4, icon = Avicon, group = "Aviation",
-  #                     label=paste("<strong>Aviation</strong><br/>", TTmapDataAvia$location,"-",TTmapDataAvia$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataRiv<-TTmapData%>%filter(year==2019)%>%filter(riv>0)), lat = ~latitude-0.6, lng = ~longitude-0.6, icon = Rivicon, group = "Riverine",
-  #                     label=paste("<strong>Riverine</strong><br/>",TTmapDataRiv$location,"-",TTmapDataRiv$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataMaint<-TTmapData%>%filter(year==2019)%>%filter(maint>0)), lat = ~latitude-0.4, lng = ~longitude-0.4, icon = Mainticon, group = "Maintenance",
-  #                     label=paste("<strong>Maintenance</strong><br/>", TTmapDataMaint$location,"-",TTmapDataMaint$mission)%>% lapply(htmltools::HTML))%>%
-  #   addAwesomeMarkers(data = (TTmapDataTrans<-TTmapData%>%filter(year==2019)%>%filter(trans>0)), lat = ~latitude+0.6, lng = ~longitude+0.6, icon = Traicon, group = "Transport",
-  #                     label=paste("<strong>Transport</strong><br/>", TTmapDataTrans$location,"-",TTmapDataTrans$mission)%>% lapply(htmltools::HTML))
-  
-  ###Map Front 
-  output$basemap<- renderLeaflet({
+
+###Map Front 
+  output$ basemap<- renderLeaflet({
     basemapFront
   })
   output$basemap_abso<- renderLeaflet({
@@ -730,27 +608,25 @@ server <- function(input, output, session){
   output$reactive_UNMOcount <- renderText({
     paste0(prettyNum(sum(filteredData()$UNMO, na.rm=TRUE), big.mark=","), " UNMO deployments")
   })
-  
+
   output$reactive_UNMOcount_absoPanel <- renderText({
     paste0(prettyNum(sum(filteredData_absolute()$UNMO, na.rm=TRUE), big.mark=","), " UNMO deployments")
   })
-  
+
   
   #Active missions in given year
   output$reactive_yearMissions <- renderText({
     paste0("Active missions in ",unique(filteredData()$year),": ", mission_comma(unique(filteredData()$mission)))
   }) 
-  
+
   output$reactive_yearMissions_absoPanel <- renderText({
     paste0("Active missions in ",unique(filteredData_absolute()$year),": ", mission_comma(unique(filteredData_absolute()$mission)))
   }) 
   
   
-  ####Generate the troop deployment map (front)####
+  ###Generate the troop deployment map (front)
   ###Observe Front map with top panel
   observe({
-    req(input$dimension[1] < 1000)
-    
     leafletProxy(mapId = "basemap", data = filteredData()) %>%
       clearMarkers() %>%
       clearShapes() %>%
@@ -777,10 +653,8 @@ server <- function(input, output, session){
                         label=paste("<strong>Mission HQ</strong><br/>",filteredDataHQ$location,"-",filteredDataHQ$mission)%>% lapply(htmltools::HTML))
   })
   
-  ###Observe Front map with absolute panel
+###Observe Front map with absolute panel
   observe({
-    req(input$dimension[1] > 1000)
-    
     leafletProxy(mapId = "basemap_abso", data = filteredData_absolute()) %>%
       clearMarkers() %>%
       clearShapes() %>%
