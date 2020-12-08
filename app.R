@@ -33,7 +33,7 @@ if(!require(purrr)) install.packages("purrr")
 if(!require(foreign)) install.packages("foreign", repos = "https://svn.r-project.org/")
 library(knitr)
 library(htmltools)
-library(shinyBS)
+if(!require(shinyBS)) install.packages("shinyBS", repos = "https://cran.r-project.org/")
 #if(!require(countrycode)) install.packages("countrycode")
 
 options(shiny.usecairo=TRUE)
@@ -310,21 +310,22 @@ Years <- Years %>% group_by(mission, location)%>% summarize(start_date=min(year)
 
 ui <- bootstrapPage( 
   navbarPage("Exploring Geo-PKO", collapsible = TRUE,
-             navbarMenu("Troop Deployments",
-                        tabPanel("Overview",
+             navbarMenu("Global Deployments",
+                        tabPanel("Troop Deployments",
+                                 # 1st conditional panel for smaller screens
                                    conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650",
-                                   column(width = 4,
-                                          h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
+                                   column(width = 4, style='padding-left:8px; padding-right:8px; margin-bottom:20px;',
+                                          span("This interactive map shows peacekeeping deployments from 1994-2019, based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
                                              progress reports. 'Mission Site' indicates where there are no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer).")),
-                                   column(width=2,style='padding:0px;', #So there is more space around the text horizontally
-                                          span(h5(tags$b(textOutput("reactive_year"), align = "left"), style="color:#15110d"),
-                                            span(h6(textOutput("reactive_troopcount"), align = "left"), style="color:#15110d"),
-                                            span(h6(textOutput("reactive_UNPOLcount"), align = "left"), style="color:#666666"),
-                                            span(h6(textOutput("reactive_UNMOcount"), align = "left"), style="color:#666666"))),
-                                   column(width = 3,
+                                   column(width=2, style='padding-left:8px; padding-right:8px; margin-bottom:20px;',
+                                          span(tags$b(textOutput("reactive_year"), align = "left"), style="color:#15110d",
+                                          p(textOutput("reactive_troopcount"), align = "left"), style="color:#15110d",
+                                          p(textOutput("reactive_UNPOLcount"), align = "left"), style="color:#666666",
+                                          p(textOutput("reactive_UNMOcount"), align = "left"), style="color:#666666")),
+                                   column(width = 3, style='padding-left:8px; padding-right:8px;',
                                           sliderInput(inputId = "YearFront", 
                                                         label = "Select deployment year",
                                                         min = 1994,
@@ -338,36 +339,39 @@ ui <- bootstrapPage(
                                           setSliderColor("transparent", 1),
                                           tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
                                    ), 
-                                   column(width = 3,
+                                   column(width = 3, style='padding-left:8px; padding-right:8px; margin-bottom:20px;',
                                           pickerInput("missionsFront","Select mission(s)", 
                                                         choices=as.character(unique(FrontmapData$mission)),
                                                         selected =as.character(unique(FrontmapData$mission)), 
                                                         options = list(`actions-box` = TRUE,size=5),multiple = T),
-                                            span(h6(textOutput("reactive_yearMissions"), align = "left"), style="color:#666666"),
-                                          style='padding:8px;')
+                                            p(textOutput("reactive_yearMissions"), align = "left"), style="color:#666666"
+                                          )
                                    ),
-                        conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650", div(class="outer", 
-                                     tags$style(type = "text/css", "#basemap {height: calc(100vh - 110px) !important;}"), 
-                                     leafletOutput("basemap"))
-                                 ),
-                        conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
-                                         div(class="outer", tags$style(type = "text/css", "#basemap_abso {height: calc(100vh - 110px) !important;}"), 
-                                                  leafletOutput("basemap_abso"))
-                        ),
-                                 conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
+                                   conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650", div(class="outer", 
+                                                tags$style(type = "text/css", "#basemap {height: calc(100vh - 110px) !important;}"), 
+                                                leafletOutput("basemap"))
+                                            ),
+                                   conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
+                                                    div(class="outer", tags$style(type = "text/css", "#basemap_abso {height: calc(100vh - 110px) !important;}"), 
+                                                             leafletOutput("basemap_abso"))
+                                   ),
+                                 
+                                   # 2nd conditional panel for larger screens
+                                   conditionalPanel(condition = "window.innerWidth > 1000 && window.innerHeight > 650", 
                                                   absolutePanel(class = "panel panel-default", top = 70, left = 85, width=270, 
                                                                 height = "auto",fixed = TRUE, 
                                                                 style = "padding: 12px; background:rgba(232, 232, 232, 0.8);bottom:25px",
-                                                                h6("This interactive map shows peacekeeping deployments from 1994-2019, based on 
+                                                                p("This interactive map shows peacekeeping deployments from 1994-2019, based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
                                              progress reports. 'Mission Site' indicates where there are no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer)."),
-                                                                span(h5(tags$b(textOutput("reactive_year_absoPanel"), align = "left"), style="color:#15110d")),
-                                                                span(h6(textOutput("reactive_troopcount_absoPanel"), align = "left"), style="color:#15110d"),
-                                                                span(h6(textOutput("reactive_UNPOLcount_absoPanel"), align = "left"), style="color:#666666"),
-                                                                span(h6(textOutput("reactive_UNMOcount_absoPanel"), align = "left"), style="color:#666666"),
-                                                                br(),
+                                                           
+                                                                tags$b(p(textOutput("reactive_year_absoPanel"), align = "left"), style="color:#15110d"),
+                                                                p(textOutput("reactive_troopcount_absoPanel"), align = "left"), style="color:#666666",
+                                                                p(textOutput("reactive_UNPOLcount_absoPanel"), align = "left"), style="color:#666666",
+                                                                p(textOutput("reactive_UNMOcount_absoPanel"), align = "left"), style="color:#666666",
+                    
                                                                 sliderInput(inputId = "YearFront_abso", 
                                                                             label = "Select deployment year",
                                                                             min = 1994,
@@ -383,7 +387,7 @@ ui <- bootstrapPage(
                                                                             choices=as.character(unique(FrontmapData_abso$mission)),
                                                                             selected =as.character(unique(FrontmapData_abso$mission)), 
                                                                             options = list(`actions-box` = TRUE,size=5),multiple = T),
-                                                                span(h6(textOutput("reactive_yearMissions_absoPanel"), align = "left"), style="color:#666666"),
+                                                                p(textOutput("reactive_yearMissions_absoPanel"), align = "left"), style="color:#666666",
                                              tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
                                              ))),
                         tabPanel("Contributing Countries",
@@ -425,8 +429,7 @@ ui <- bootstrapPage(
                                                                         options = list(`actions-box` = TRUE),multiple = T), width = 3),
                                                mainPanel ( tags$style(type = "text/css", "#TroopTypeMap {height: calc(100vh - 130px) !important;}"), leafletOutput("TroopTypeMap", width = "112%")),####Screen size, responsive to different types
                                                position = c("left", "right")))),
-             tags$head(tags$style(".leaflet-top {z-index:999!important;}")),
-             navbarMenu("The Map Generator",
+             navbarMenu("Missions",
                         tabPanel("Deployment Maps (Static)", fluid=TRUE,
                                  titlePanel("Deployment Maps"),
                                  sidebarLayout(
@@ -470,15 +473,28 @@ ui <- bootstrapPage(
                                                 p("Animated maps are always cool, and in this case they show how deployment patterns change over time for each mission. Select a mission and click on the button below to explore."),
                                                 selectInput(inputId="anim_map", label="Mission",
                                                             choices=anim_choice_list, width=200, selected=NULL),
-                                                actionButton("go_anim", "Animated!"),
+                                                actionButton("go_anim", "Render animation"),
                                                 p(""),
                                                 tags$div("This tool relies on the package",tags$em("gganimate."),"Rendering may take time as it entails producing and combining multiple frames. For the best effect, only missions with more than five source maps are available to select here.")
                                    ),
                                    mainPanel(fluid=TRUE, 
-                                             withSpinner(imageOutput("animated")))))),
+                                             withSpinner(imageOutput("animated")))
+                                   )
+                        ),
+                       tabPanel("Deployment Periods",
+                                sidebarLayout(
+                                sidebarPanel(
+                                p("This graph shows the specific time period during which a location had at least one active deployment."),
+                                selectInput(inputId="Lollipop_map", label="Select a mission",
+                                            choices=levels(factor(geopko$mission)), width=150,
+                                            selected="MONUSCO"), width= 3,
+                                helpText("The graphs do not show possible temporal interruptions.")
+                                ),
+                                mainPanel(fluid=TRUE,
+                                  plotOutput("lollipop", height="auto"))))),
              ####TCC Table UI####
              tabPanel("Contributing Countries",
-                      titlePanel("Troop-contributing Countries"),
+                      titlePanel("Troop-Contributing Countries"),
                       sidebarLayout(
                         sidebarPanel(radioButtons(inputId="databy_tcc", 
                                                   label="Present data by:", 
@@ -492,28 +508,13 @@ ui <- bootstrapPage(
                                   helpText("Tip: Use the search box to filter for a specific mission or a troop-contributing country."),
                                   DT::dataTableOutput("tcc_table")
                         ))),
-             tabPanel("Missions",
-                      sidebarLayout(
-                        sidebarPanel(
-                          p("This graph shows the specific time period during which a location had at least one active deployment."),
-                          selectInput(inputId="Lollipop_map", label="Select a mission",
-                                      choices=levels(factor(geopko$mission)), width=150,
-                                      selected="MONUSCO"), width= 3,
-                          helpText("The graphs do not show possible temporal interruptions.")
-                        ),
-                        mainPanel(fluid=TRUE,
-                                  plotOutput("lollipop", height="auto")
-                        )
-                      )),
              tabPanel ("Data",tags$div(
                 withMathJax(includeMarkdown("data.md"))
              ), style='width:1100px'),
              tabPanel ("About",tags$div(
                 withMathJax(includeMarkdown("about.md"))
-             ), style='width:1100px'))
-  )
-
-
+             ), style='width:1100px'),
+             tags$head(tags$style(".leaflet-top {z-index:999!important;}"))))
 
 
 server <- function(input, output, session){
@@ -584,11 +585,11 @@ server <- function(input, output, session){
   #Reactive Text for the front page
   #Year
   output$reactive_year <- renderText({
-    paste0("In ",unique(filteredData()$year), " there were:")
+    paste0("In ",unique(filteredData()$year), " there were...")
   }) 
   
   output$reactive_year_absoPanel<- renderText({
-    paste0("In ",unique(filteredData_absolute()$year), " there were:")
+    paste0("In ",unique(filteredData_absolute()$year), " there were...")
   }) 
   
   #Average troop deployment
