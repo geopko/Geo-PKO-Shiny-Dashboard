@@ -41,7 +41,7 @@ options(shiny.usecairo=TRUE, shiny.sanitize.errors=FALSE)
 
 ####import data####
 
-geopko <- readr::read_csv("Geo_PKO_v2.0_ISO3.csv", col_types = cols(.default="c"))
+geopko <- readr::read_csv("data/Geo_PKO_v2.0_ISO3.csv", col_types = cols(.default="c"))
 #geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
 #Rmd pages
@@ -126,7 +126,7 @@ Mainticon <- makeAwesomeIcon(
   library = 'fa'
 )
 ####Data frame for first map#### 
-FrontmapData <- readxl::read_xlsx("FrontMap.xlsx", col_types="text")
+FrontmapData <- readxl::read_xlsx("data/FrontMap.xlsx", col_types="text")
 
 FrontmapData <- FrontmapData %>% 
   mutate_at(vars(latitude:ave.no.troops), as.numeric)
@@ -139,11 +139,11 @@ mission_comma <-function(w, oxford=T) {
 
 
 ####TCC dataframe (second map)####
-TCCmapData <- readxl::read_xlsx("TCCMap.xlsx", col_types="text")
+TCCmapData <- readxl::read_xlsx("data/TCCMap.xlsx", col_types="text")
 TCCmapData %>% mutate_at(vars(longitude, latitude, No.TCC), as.numeric) -> TCCmapData
 
 ####Troop Type Dataframe (third map)####
-TTmapData <- readxl::read_xlsx("TTMap.xlsx", col_types="text")
+TTmapData <- readxl::read_xlsx("data/TTMap.xlsx", col_types="text")
 TTmapData <- TTmapData %>% 
   mutate_at(vars(latitude:trans), as.numeric)
 
@@ -304,8 +304,10 @@ ui <- bootstrapPage(
   navbarPage("Exploring Geo-PKO", collapsible = TRUE,
              navbarMenu("Troop Deployments",
                         tabPanel("Overview",
+                                 # spinner on loading
                                  use_waiter(), 
-                                 waiter_show_on_load(html = spin_fading_circles()),
+                                 waiter_show_on_load(html = spin_wave()),
+                                 # JS to grab page width
                                  tags$head(tags$script('
                                 var dimension = [0, 0];
                                 $(document).on("shiny:connected", function(e) {
@@ -394,6 +396,7 @@ ui <- bootstrapPage(
                                                                     span(h6(textOutput("reactive_yearMissions_absoPanel"), align = "left"), style="color:#666666"),
                                                                     tags$style(type= "text/css", HTML(".irs-single {color:black; background:transparent}"))
                                                   )))),
+                  #      tags$head(tags$style(".leaflet-top {z-index:999!important;}")),
                         tabPanel("Contributing Countries",
                                  sidebarLayout(sidebarPanel( "This map shows how many troop-contributing countries (TCCs) have deployed peacekeepers to a location. TCCs and the number of troops each country has contributed are shown in the labels.<br/><br/>"%>% lapply(htmltools::HTML),
                                                              chooseSliderSkin("Shiny", color = "transparent"),
@@ -411,7 +414,9 @@ ui <- bootstrapPage(
                                                                          choices=as.character(unique(TCCmapData$mission)),
                                                                          selected =as.character(unique(TCCmapData$mission)) , 
                                                                          options = list(`actions-box` = TRUE),multiple = T), width = 3),
-                                               mainPanel ( tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),leafletOutput("map",width = "112%")),
+                                               mainPanel (
+                                                 tags$head(tags$style(".leaflet-top {z-index:999!important;}")),
+                                                 tags$style(type = "text/css", "#map {height: calc(100vh - 130px) !important;}"),leafletOutput("map",width = "112%")),
                                                position = c("left", "right")
                                  )),
                         tabPanel("Troop Types",
@@ -433,7 +438,6 @@ ui <- bootstrapPage(
                                                                         options = list(`actions-box` = TRUE),multiple = T), width = 3),
                                                mainPanel ( tags$style(type = "text/css", "#TroopTypeMap {height: calc(100vh - 130px) !important;}"), leafletOutput("TroopTypeMap", width = "112%")),####Screen size, responsive to different types
                                                position = c("left", "right")))),
-             tags$head(tags$style(".leaflet-top {z-index:999!important;}")),
              navbarMenu("Mission-Focused Maps",
                         tabPanel("Static Deployment Maps", fluid=TRUE,
                                  titlePanel("Deployment Maps"),
@@ -845,6 +849,7 @@ server <- function(input, output, session){
   ####TCC tables####
   
   bymap_df <- reactive({
+    
     geopko %>% 
       mutate_at(vars(c(no.troops, no.tcc, longitude, latitude,
                        unmo.dummy, unpol.dummy)), as.numeric) %>% 
@@ -868,6 +873,8 @@ server <- function(input, output, session){
   }) 
   
   byyear_df <- reactive({
+    req(input$databy_tcc=="Year")
+    
     geopko %>% 
       mutate_at(vars(c(no.troops, no.tcc, longitude, latitude,
                        unmo.dummy, unpol.dummy)), as.numeric) %>% 
@@ -875,17 +882,19 @@ server <- function(input, output, session){
       select(source, mission, year, month, MonthName,
              no.troops, nameoftcc_1:notroopspertcc_17) %>% 
       group_by(source, mission, year, month, MonthName) %>% 
-      mutate(Total.troops=sum(no.troops, na.rm=T)) %>% ungroup() 
-    pivot_longer(c(nameoftcc_1:notroopspertcc_17), names_to=c(".value", "TCC_id"), names_sep="_")%>%
+      mutate(Total.troops=sum(no.troops, na.rm=T)) %>% ungroup() %>% 
+      pivot_longer(c(nameoftcc_1:notroopspertcc_17), names_to=c(".value", "TCC_id"), names_sep="_")%>%
       filter(!is.na(nameoftcc)) %>%
       mutate_at(vars(notroopspertcc), as.numeric) %>% 
       select(-TCC_id) %>% 
+      mutate(nameoftcc=case_when(nameoftcc == "Cote D'ivoire" ~ "Ivory Coast",
+                                 TRUE ~ as.character(nameoftcc))) %>% 
       group_by(source, mission, year, month, Total.troops, nameoftcc)%>%
       summarise(total.each.tcc=as.character(sum(notroopspertcc, na.rm=TRUE))) %>% 
       add_count(source, name="No.TCC") %>%
       mutate(total.each.tcc=ifelse(total.each.tcc=="0","size unknown", total.each.tcc),
              overview=paste0(nameoftcc," (",total.each.tcc,")")) %>%
-      select(-nameoftcc, -total.each.tcc) %>%
+      select(-nameoftcc, -total.each.tcc) %>% 
       group_by(source, mission, year, month, Total.troops, No.TCC) %>%
       summarise(byyear.overview=str_c(overview, collapse=", ")) %>% 
       arrange(desc(year)) %>%
@@ -1099,7 +1108,7 @@ server <- function(input, output, session){
                              aes(x=longitude, y=latitude, shape="HQ"),
                              shape=4, color="red", size=6)+
           geom_label_repel(data=MHQ_df_temp(),
-                           aes(x=longitude, y=latitude, label=paste0("Mission hq: ",location)
+                           aes(x=longitude, y=latitude, label=paste0("Mission HQ: ",location)
                            ),
                            box.padding = 2,
                            size = 3,

@@ -118,3 +118,4 @@ geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 write_excel_csv(geopko2, "Geo_PKO_v.2.0.csv")
 
 geopko3 <- readr::read_csv("Geo_PKO_v.2.0.csv")
+
