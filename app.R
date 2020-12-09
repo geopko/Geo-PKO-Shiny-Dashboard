@@ -649,7 +649,7 @@ ui <- bootstrapPage(
         sidebarLayout(
           sidebarPanel(
             width = 3,
-            p("Animated maps are always cool, and in this case they show how deployment patterns change over time for each mission. Select a mission and click on the button below to explore."),
+            p("Animated maps show how deployment patterns change over time for each mission. Select a mission and click on the button below to explore."),
             selectInput(
               inputId = "anim_map", label = "Mission",
               choices = anim_choice_list, width = 200, selected = NULL
