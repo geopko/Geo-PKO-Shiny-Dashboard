@@ -5,9 +5,9 @@ account: geopko
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3368088
-bundleId: 3965714
+bundleId: 3965904
 url: https://geopko.shinyapps.io/GeoPKODashboard/
-when: 1607519923.30707
+when: 1607522701.54497
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: CAF_adm1.sf.rds|data_wrangling.R|MLI_adm1.sf.rds|Script-test/testscript.R|Script-test/testscript2.R|Script-test/testscript3.R
+ignoredFiles: data_wrangling.R|Script-test/testscript.R|Script-test/testscript2.R|Script-test/testscript3.R
