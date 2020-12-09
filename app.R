@@ -421,14 +421,15 @@ ui <- bootstrapPage(
                                     Shiny.onInputChange("dimension", dimension);
                                 });
                             ')),
+                 
                  # 1st conditional panel for smaller screens
                  conditionalPanel(
-                   condition = "window.innerWidth < 1000 || window.innerHeight < 650",
+                   condition = "window.innerWidth < 1000 || window.innerHeight < 780",
                    column(
                      width = 4, style = "padding-left:8px; padding-right:8px; margin-bottom:20px;",
-                     span("This interactive map shows peacekeeping deployments from 1994-2019, based on 
+                     span("This interactive map shows peacekeeping deployments from 1994-2019 based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
-                                             progress reports. 'Mission Site' indicates where there are no active troop deployments, 
+                                             progress reports. 'Mission Site' indicates no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer).")
                    ),
@@ -473,14 +474,15 @@ ui <- bootstrapPage(
                      )
                    )
                  ),
-                 conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 650", div(
+                 conditionalPanel(condition = "window.innerWidth < 1000 || window.innerHeight < 780", div(
                    class = "outer",
                    tags$style(type = "text/css", "#basemap {height: calc(100vh - 110px) !important;}"),
                    leafletOutput("basemap")
                  )),
+                 
                  # 2nd conditional panel for larger screens
                  conditionalPanel(
-                   condition = "window.innerWidth > 1000 && window.innerHeight > 650",
+                   condition = "window.innerWidth > 1000 && window.innerHeight > 780",
                    div(
                      class = "outer", tags$style(type = "text/css", "#basemap_abso {height: calc(100vh - 110px) !important;}"),
                      leafletOutput("basemap_abso")
@@ -488,7 +490,7 @@ ui <- bootstrapPage(
                  ),
                  
                  conditionalPanel(
-                   condition = "window.innerWidth > 1000 && window.innerHeight > 650",
+                   condition = "window.innerWidth > 1000 && window.innerHeight > 780",
                    absolutePanel(
                      class = "panel panel-default", top = 70, left = 85, width = 270,
                      height = "auto", fixed = TRUE,
@@ -497,7 +499,7 @@ ui <- bootstrapPage(
                        style="margin-bottom:15px;",
                        p("This interactive map shows peacekeeping deployments from 1994-2019, based on 
                                              publicly available United Nations (UN) peacekeeping deployment maps and mission 
-                                             progress reports. 'Mission Site' indicates where there are no active troop deployments, 
+                                             progress reports. 'Mission Site' indicates no active troop deployments, 
                                              but the presence of support personnel such as UNPOL (UN Police) 
                                              and/or UNMO (UN Military Observer)."),
                      ),
@@ -537,7 +539,7 @@ ui <- bootstrapPage(
                  )
                ),
                tabPanel(
-                 "Contributing Countries",
+                 "Troop-Contributing Countries",
                  sidebarLayout(sidebarPanel("This map shows how many troop-contributing countries (TCCs) have deployed peacekeepers to a location. TCCs and the number of troops each country has contributed are shown in the labels.<br/><br/>" %>% lapply(htmltools::HTML),
                                             chooseSliderSkin("Shiny", color = "transparent"),
                                             setSliderColor("transparent", 1),
@@ -655,7 +657,7 @@ ui <- bootstrapPage(
                             ),
                             actionButton("go_anim", tags$b("Render animation")),
                             p(""),
-                            tags$div("Rendering may take time as it entails producing and combining multiple frames. For the best effect, only missions with more than five source maps are available to select here.")
+                            helpText("Rendering may take time as it entails producing and combining multiple frames. For the best effect, only missions with more than five source maps are available to select here.")
                           ),
                           mainPanel(
                             fluid = TRUE,
@@ -664,7 +666,7 @@ ui <- bootstrapPage(
                         )
                ),
                tabPanel(
-                 "Deployment Period",
+                 "Deployment Periods",
                  sidebarLayout(
                    sidebarPanel(
                      p("This graph shows the specific time period during which a location had at least one active deployment."),
@@ -685,8 +687,8 @@ ui <- bootstrapPage(
              ),
              #### TCC Table UI####
              tabPanel(
-               "Contributing Countries",
-               titlePanel("Troop-Contributing Countries"),
+               "Countries",
+               titlePanel("Countries"),
                sidebarLayout(
                  sidebarPanel(
                    p("How many troops have different countries contributed to peacekeeping missions? Choose to view by each published deployment map (recommended) or by year."),
