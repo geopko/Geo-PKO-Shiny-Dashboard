@@ -119,3 +119,61 @@ write_excel_csv(geopko2, "Geo_PKO_v.2.0.csv")
 
 geopko3 <- readr::read_csv("Geo_PKO_v.2.0.csv")
 
+geopko %>% filter(mission=="MINUSMA") %>% 
+  tibble::rowid_to_column("ID") %>%
+  select(
+    ID, location, no.troops, no.tcc, rpf:uav, other.type, -rpf.no,
+    -inf.no, -fpu.no, -res.no, -fp.no
+  ) %>%
+  mutate(across(everything(), as.character)) %>%
+  pivot_longer(5:23, names_to = "trooptypes", values_to = "binary") %>%
+  filter(binary == 1) %>%
+  mutate(trooptypes = case_when(
+    trooptypes == "sf" ~ "Special Forces",
+    trooptypes == "inf" ~ "Infantry",
+    trooptypes == "he.sup" ~ "Helicopter Support",
+    trooptypes == "avia" ~ "Aviation",
+    trooptypes == "mp" ~ "Military Police",
+    trooptypes == "uav" ~ "Unmanned Aerial Vehicles",
+    trooptypes == "recon" ~ "Reconnaissance",
+    trooptypes == "maint" ~ "Maintenance",
+    trooptypes == "med" ~ "Medical",
+    trooptypes == "eng" ~ "Engineer",
+    trooptypes == "fpu" ~ "Formed Police Unit",
+    trooptypes == "fp" ~ "Force Protection",
+    trooptypes == "riv" ~ "Riverine",
+    trooptypes == "sig" ~ "Signal",
+    trooptypes == "trans" ~ "Transport",
+    trooptypes == "other.type" ~ "Others",
+    trooptypes == "eng" ~ "Engineer",
+    trooptypes == "rpf" ~ "Regional Protection Force",
+    trooptypes == "demining" ~ "Demining",
+    TRUE ~ as.character(trooptypes)
+  )) %>%
+  group_by(ID, location, no.troops, no.tcc) %>%
+  summarize(Troop.Compo = str_c(trooptypes, collapse = ", ")) %>%
+  ungroup() %>%
+  mutate(
+    no.tcc = ifelse(is.na(no.tcc), "Unknown", no.tcc),
+    no.troops = ifelse(is.na(no.troops), "Unknown", no.troops)
+  ) %>%
+  select(-ID) -> test1
+
+
+geopko %>% filter(mission=="MINUSMA") %>% 
+  tibble::rowid_to_column("ID") %>%
+  select(
+    ID, location, no.troops, no.tcc, rpf:uav, other.type, -rpf.no,
+    -inf.no, -fpu.no, -res.no, -fp.no
+  ) %>%
+  mutate(across(everything(), as.character)) %>%
+  pivot_longer(5:23, names_to = "trooptypes", values_to = "binary") %>%
+  filter(binary != 1) %>%
+  group_by(ID, location, no.troops, no.tcc) %>%
+  summarize(Troop.Compo = "Data on troop types not available for this location") %>%
+  ungroup() %>%
+  mutate(
+    no.tcc = ifelse(is.na(no.tcc), "Unknown", no.tcc),
+    no.troops = ifelse(is.na(no.troops), "Unknown", no.troops)
+  ) %>%
+  select(-ID) -> details2

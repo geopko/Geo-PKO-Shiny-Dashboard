@@ -9,7 +9,7 @@ The Geo-PKO dataset is a collaborative project by Deniz Cil (University of Maryl
 Project contributors include Jonas Baumann, Deniz Cil, Hanne Fjelde, Nguyen Ha, Lisa Hultman, Brandon Ives, Desirée Nilsson, Tanushree Rao, Kajsa Tidblad-Lundholm, and Lou van Roozendaal.
 
 ## About this website
-This website and the interactive visualisations were created by Nguyen Ha, Lou van Roozendaal, and Tanushree Rao (research assistants at the Department of Peace and Conflict Research, Uppsala University). You can learn more about the script used to produce this application [on GitHub](http://). Since this is an evolving project, we would love to hear if you have any suggestion for improvement, or if you have encountered any issue while using the app. 
+This website and the interactive visualisations were created by Nguyen Ha, Lou van Roozendaal, and Tanushree Rao (research assistants at the Department of Peace and Conflict Research, Uppsala University). You can learn more about the script used to produce this application [on GitHub](http://github.com/geopko/Geo-PKO-Shiny-Dashboard). Since this is an evolving project, we would love to hear if you have any suggestion for improvement, or if you have encountered any issue while using the app. 
 
 ## Funding
 The data collection has been enabled by the generous support of the Folke Bernadotte Academy, the Knut and Alice Wallenberg Foundation, the Smith Richardson Foundation, and the Minerva Initiative of the US Department of Defense/Air Force Office of Scientific Research.

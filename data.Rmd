@@ -18,5 +18,5 @@ Data has been coded in accordance with digitally published United Nations peacek
 ### Work with the data
 Since the unit of analysis is deployment location per source map, the data structure may be challenging to work with. Our GitHub documentation provides a guide to working with the Geo-PKO dataset using R. We hope that this will help users produce your own visualisations and incorporate this dataset in your own analysis. 
   
-[Explore our documentation on working with Geo-PKO data here.](http://)
+[Explore our documentation on working with Geo-PKO data here.](http://geopko.github.io/Geo-PKO-R)
 
