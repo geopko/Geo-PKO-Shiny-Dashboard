@@ -1,6 +1,6 @@
 # Geo-PKO-Shiny-Dashboard
 
-Where are peacekeepers deployed? This project uses the Geocoded Peacekeeping Operations (Geo-PKO) dataset to visualize deployment locations and its attributes - troop strength, contributing countries, and troop capabilities. 
+Where are peacekeepers deployed? This project uses the Geocoded Peacekeeping Operations (Geo-PKO) dataset to visualize deployment locations and their attributes - including troop strength, contributing countries, and troop capabilities. 
 
 ![](screencap-shiny.png) 
 
