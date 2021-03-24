@@ -37,7 +37,7 @@ map_df <- map_df %>%
   unite(joined_date, c("year","MonthName"), sep=": ", remove=FALSE) %>%
   unite(timepoint, c("year","MonthName"), sep=" ", remove=FALSE)
 
-write_excel_csv(map_df, "Geo_PKO_v2.0_ISO3.csv")
+write_excel_csv(map_df, "Geo_PKO_v2.1_ISO3.csv")
 
 #### file for leaflet ####
 
