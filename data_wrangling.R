@@ -8,7 +8,7 @@ library(readr)
 library(readxl)
 library(lubridate)
 
-#### file for mapmaker ####
+#### dataset with ISO codes for mapmaker ####
 geopko_raw <- read_xlsx("Geo_PKO_v.2.1.xlsx", col_types = c("text"))
 missingyears <- read_xlsx("missingyears.xlsx", col_types = c("text"))
 
@@ -85,17 +85,19 @@ TCCmapData<-geopko2 %>% select(source:location, latitude, longitude,
   filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
   mutate_at(vars(notroopspertcc), as.numeric) %>%
   group_by(mission, year, location, latitude, longitude, nameoftcc) %>%
-  mutate(nameoftcc = tolower(nameoftcc)) %>%
   summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
-  mutate(nameoftcc = str_to_sentence(nameoftcc)) %>%
-  mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
+  mutate(nameoftcc = str_to_title(nameoftcc),
+         nameoftcc = case_when(nameoftcc == "Uk" ~ "UK", 
+                               nameoftcc == "Cote D'ivoire" ~ "Cote d'Ivoire", 
+                               nameoftcc == "Usa" ~ "USA", 
+                               nameoftcc == "Caricom" ~ "CARICOM",
+                               nameoftcc == "Korea (Rok)" ~ "Korea (ROK)",
+                               TRUE ~ nameoftcc)) %>%
+  mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "size unknown", count.per.tcc.year),
          single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
   add_count(year, location, name="no_tcc")%>%
   group_by(mission, year, location, latitude, longitude, no_tcc) %>%
-  summarise(year.overview = str_c(single.tcc, collapse=", ")) %>%
-  mutate(no_tcc = case_when(str_detect(year.overview, "NA") ~ no_tcc - 1, 
-                            TRUE ~ as.numeric(no_tcc))) %>%
-  mutate(year.overview = str_replace(year.overview, pattern="Na (unknown)", replacement="NA (unknown)"))
+  summarise(year.overview = str_c(single.tcc, collapse=", ")) 
 
 write_excel_csv(TCCmapData, "TCCMap.csv")
 
