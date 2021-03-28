@@ -9,10 +9,18 @@ library(readxl)
 library(lubridate)
 
 #### file for mapmaker ####
-geopko_raw <- read_xlsx("Geo_PKO_v.2.0.xlsx", col_types = c("text"))
+geopko_raw <- read_xlsx("Geo_PKO_v.2.1.xlsx", col_types = c("text"))
+missingyears <- read_xlsx("missingyears.xlsx", col_types = c("text"))
 
 # filtering for any republished maps to remove incorrect data
-geopko <- filter(geopko_raw, !source %in% c("republished"))
+geopkofilter <- geopko_raw %>%
+  filter(!str_detect(source, 'republished'))
+
+# merging with missing years data
+geopko <- geopkofilter %>%
+  full_join(geopkofilter, missingyears,
+  by = c("mission", "year", "location"),
+  suffix = c("", ""))
 
 # setting class of numeric variables
 map_df <- geopko %>% 
@@ -77,12 +85,17 @@ TCCmapData<-geopko2 %>% select(source:location, latitude, longitude,
   filter(!is.na(nameoftcc)) %>%  #dropping empty tcc name cells
   mutate_at(vars(notroopspertcc), as.numeric) %>%
   group_by(mission, year, location, latitude, longitude, nameoftcc) %>%
+  mutate(nameoftcc = tolower(nameoftcc)) %>%
   summarise(count.per.tcc.year=as.character(max(notroopspertcc))) %>%
+  mutate(nameoftcc = str_to_sentence(nameoftcc)) %>%
   mutate(count.per.tcc.year=ifelse(is.na(count.per.tcc.year), "unknown", count.per.tcc.year),
          single.tcc=paste0(nameoftcc, " (",count.per.tcc.year,(")"))) %>%
-  add_count(year, location, name="No.TCC")%>%
-  group_by(mission, year, location, latitude, longitude, No.TCC) %>%
-  summarise(year.overview = str_c(single.tcc, collapse=", "))
+  add_count(year, location, name="no_tcc")%>%
+  group_by(mission, year, location, latitude, longitude, no_tcc) %>%
+  summarise(year.overview = str_c(single.tcc, collapse=", ")) %>%
+  mutate(no_tcc = case_when(str_detect(year.overview, "NA") ~ no_tcc - 1, 
+                            TRUE ~ as.numeric(no_tcc))) %>%
+  mutate(year.overview = str_replace(year.overview, pattern="Na (unknown)", replacement="NA (unknown)"))
 
 write_excel_csv(TCCmapData, "TCCMap.csv")
 
@@ -117,11 +130,11 @@ write_excel_csv(TTmapData, "TTMap.csv")
 
 library(readxl)
 library(readr)
-geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
+geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.1.xlsx", col_types="text")
 
-write_excel_csv(geopko2, "Geo_PKO_v.2.0.csv")
+write_excel_csv(geopko2, "Geo_PKO_v.2.1.csv")
 
-geopko3 <- readr::read_csv("Geo_PKO_v.2.0.csv")
+geopko3 <- readr::read_csv("Geo_PKO_v.2.1.csv")
 
 geopko %>% filter(mission=="MINUSMA") %>% 
   tibble::rowid_to_column("ID") %>%
