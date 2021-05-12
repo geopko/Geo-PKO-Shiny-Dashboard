@@ -1,13 +1,12 @@
 name: geopkodashboard
-title: GeoPKODashboard
+title: Geo-PKO-Shiny-Dashboard
 username:
 account: geopko
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3368088
-bundleId: 3993784
+bundleId: 4590386
 url: https://geopko.shinyapps.io/GeoPKODashboard/
-when: 1608066480.72367
+when: 1620831204.07203
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: AGO_adm1.sf.rds|data_wrangling.R|Script-test/testscript.R|Script-test/testscript2.R|Script-test/testscript3.R

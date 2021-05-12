@@ -40,7 +40,7 @@ options(shiny.usecairo = TRUE)
 
 #### import data####
 
-geopko <- readr::read_csv("data/Geo_PKO_v2.1_ISO3.csv", col_types = cols(.default = "c"))
+geopko <- readr::read_csv("data/Geo_PKO_v.2.1_ISO3.csv", col_types = cols(.default = "c"))
 # geopko2 <- readxl::read_xlsx("Geo_PKO_v.2.0.xlsx", col_types="text")
 
 # Rmd pages
@@ -129,6 +129,7 @@ Mainticon <- makeAwesomeIcon(
 # Data frame for first map
 
 FrontmapData <- readxl::read_xlsx("data/FrontMap.xlsx", col_types = "text")
+#FrontmapData <- readr::read_csv("data/FrontMap.csv", col_types = cols(.default = "c"))
 FrontmapData <- FrontmapData %>%
   mutate_at(vars(latitude:ave.no.troops), as.numeric)
 
@@ -145,10 +146,12 @@ mission_comma <- function(w, oxford = T) {
 
 ### TCC dataframe (second map)
 TCCmapData <- readxl::read_xlsx("data/TCCMap.xlsx", col_types = "text")
+#TCCmapData <- readr::read_csv("data/TCCMap.csv", col_types = cols(.default = "c"))
 TCCmapData %>% mutate_at(vars(longitude, latitude, No.TCC), as.numeric) -> TCCmapData
 
 ## Troop Type Dataframe (third map)
 TTmapData <- readxl::read_xlsx("data/TTMap.xlsx", col_types = "text")
+#TTmapData <- readr::read_csv("data/TTMap.csv", col_types = cols(.default = "c"))
 TTmapData <- TTmapData %>%
   mutate_at(vars(latitude:trans), as.numeric)
 
@@ -272,7 +275,7 @@ TCC_basemap <- leaflet(geopko, options = leafletOptions(minZoom = 2)) %>%
       "width" = "150px", "white-space" = "normal"
     )),
     label = paste(
-      "<strong>", TCCmapData2020$mission, "</strong><br/><strong>Location:</strong>", TCCmapData$location,
+      "<strong>", TCCmapData2020$mission, "</strong><br/><strong>Location:</strong>", TCCmapData2020$location,
       "<br/><strong>Total number of TCCs:</strong>", TCCmapData2020$No.TCC, "<br/><strong>Countries:</strong>",
       TCCmapData2020$year.overview
     ) %>% lapply(htmltools::HTML)
