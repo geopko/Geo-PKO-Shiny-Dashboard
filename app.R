@@ -133,7 +133,7 @@ FrontmapData <- readxl::read_xlsx("data/FrontMap.xlsx", col_types = "text")
 FrontmapData <- FrontmapData %>%
   mutate_at(vars(latitude:ave.no.troops), as.numeric)
 
-# FrontmapData_abso <- FrontmapData # Make a duplicate for that other front map
+FrontmapData_abso <- FrontmapData # Make a duplicate for that other front map
 
 #### Oxford comma mission text front page####
 mission_comma <- function(w, oxford = T) {
